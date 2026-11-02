@@ -1,0 +1,327 @@
+{
+  "days": {
+    "2026-09-25": {
+      "isHoliday": true,
+      "slots": {},
+      "extraClasses": []
+    },
+    "2026-10-12": {
+      "isHoliday": false,
+      "slots": {
+        "perm-m1": "present",
+        "perm-m2": "present",
+        "perm-m3": "present"
+      },
+      "extraClasses": []
+    },
+    "2026-09-21": {
+      "isHoliday": false,
+      "slots": {
+        "w1-m1": "absent",
+        "w1-m2": "absent",
+        "w1-m3": "absent"
+      },
+      "extraClasses": []
+    },
+    "2026-09-22": {
+      "isHoliday": false,
+      "slots": {
+        "w1-t1": "absent",
+        "w1-t2": "absent"
+      },
+      "extraClasses": []
+    },
+    "2026-09-23": {
+      "isHoliday": false,
+      "slots": {
+        "w1-w1": "absent",
+        "w1-w2": "absent",
+        "w1-w3": "absent"
+      },
+      "extraClasses": []
+    },
+    "2026-09-24": {
+      "isHoliday": false,
+      "slots": {
+        "w1-th1": "absent",
+        "w1-th2": "absent",
+        "w1-th3": "absent",
+        "w1-th4": "absent"
+      },
+      "extraClasses": []
+    },
+    "2026-09-26": {
+      "isHoliday": false,
+      "slots": {},
+      "extraClasses": []
+    },
+    "2026-09-27": {
+      "isHoliday": false,
+      "slots": {},
+      "extraClasses": []
+    },
+    "2026-09-28": {
+      "isHoliday": false,
+      "slots": {
+        "perm-m1": "absent",
+        "perm-m2": "absent",
+        "perm-m3": "absent"
+      },
+      "extraClasses": []
+    },
+    "2026-09-29": {
+      "isHoliday": false,
+      "slots": {
+        "perm-t1": "present",
+        "perm-t2": "present"
+      },
+      "extraClasses": []
+    },
+    "2026-09-30": {
+      "isHoliday": false,
+      "slots": {
+        "perm-w1": "present",
+        "perm-w2": "present",
+        "perm-w3": "present",
+        "perm-w4": "present"
+      },
+      "extraClasses": []
+    },
+    "2026-10-01": {
+      "isHoliday": false,
+      "slots": {
+        "perm-th1": "present",
+        "perm-th2": "present",
+        "perm-th3": "present",
+        "perm-th4": "cancelled"
+      },
+      "extraClasses": []
+    },
+    "2026-10-02": {
+      "isHoliday": true,
+      "slots": {},
+      "extraClasses": []
+    },
+    "2026-10-03": {
+      "isHoliday": false,
+      "slots": {},
+      "extraClasses": []
+    },
+    "2026-10-04": {
+      "isHoliday": false,
+      "slots": {},
+      "extraClasses": []
+    },
+    "2026-10-05": {
+      "isHoliday": false,
+      "slots": {
+        "perm-m1": "present",
+        "perm-m2": "present",
+        "perm-m3": "present"
+      },
+      "extraClasses": []
+    },
+    "2026-10-06": {
+      "isHoliday": false,
+      "slots": {
+        "perm-t1": "present",
+        "perm-t2": "present"
+      },
+      "extraClasses": []
+    },
+    "2026-10-07": {
+      "isHoliday": false,
+      "slots": {
+        "perm-w1": "present",
+        "perm-w2": "present",
+        "perm-w3": "present",
+        "perm-w4": "present"
+      },
+      "extraClasses": []
+    },
+    "2026-10-08": {
+      "isHoliday": false,
+      "slots": {
+        "perm-th1": "present",
+        "perm-th2": "present",
+        "perm-th3": "present",
+        "perm-th4": "present"
+      },
+      "extraClasses": []
+    },
+    "2026-10-09": {
+      "isHoliday": false,
+      "slots": {
+        "perm-f1": "present",
+        "perm-f2": "present",
+        "perm-f3": "present"
+      },
+      "extraClasses": []
+    },
+    "2026-10-10": {
+      "isHoliday": false,
+      "slots": {},
+      "extraClasses": []
+    },
+    "2026-10-11": {
+      "isHoliday": false,
+      "slots": {},
+      "extraClasses": []
+    },
+    "2026-10-15": {
+      "isHoliday": false,
+      "slots": {
+        "perm-th1": "cancelled",
+        "perm-th2": "present",
+        "perm-th3": "present",
+        "perm-th4": "present"
+      },
+      "extraClasses": [
+        {
+          "id": "extra_1792070033759_c2kfz",
+          "subject": "FOP",
+          "time": "14:30 - 15:30",
+          "status": "present"
+        }
+      ]
+    },
+    "2026-10-13": {
+      "isHoliday": false,
+      "slots": {
+        "perm-t1": "present",
+        "perm-t2": "present"
+      },
+      "extraClasses": []
+    },
+    "2026-10-14": {
+      "isHoliday": false,
+      "slots": {
+        "perm-w1": "present",
+        "perm-w2": "present",
+        "perm-w3": "present",
+        "perm-w4": "present"
+      },
+      "extraClasses": []
+    },
+    "2026-10-16": {
+      "isHoliday": false,
+      "slots": {
+        "perm-f1": "absent",
+        "perm-f2": "absent",
+        "perm-f3": "absent"
+      },
+      "extraClasses": []
+    },
+    "2026-10-19": {
+      "isHoliday": false,
+      "slots": {
+        "perm-m1": "present",
+        "perm-m2": "present",
+        "perm-m3": "present"
+      },
+      "extraClasses": []
+    },
+    "2026-10-18": {
+      "isHoliday": false,
+      "slots": {},
+      "extraClasses": []
+    },
+    "2026-10-17": {
+      "isHoliday": false,
+      "slots": {},
+      "extraClasses": []
+    },
+    "2026-10-20": {
+      "isHoliday": true,
+      "slots": {},
+      "extraClasses": []
+    },
+    "2026-11-01": {
+      "isHoliday": false,
+      "slots": {},
+      "extraClasses": []
+    },
+    "2026-10-21": {
+      "isHoliday": false,
+      "slots": {
+        "d4b-w1": "present",
+        "d4b-w2": "present",
+        "d4b-w3": "present",
+        "d4b-w4": "cancelled"
+      },
+      "extraClasses": []
+    },
+    "2026-10-22": {
+      "isHoliday": false,
+      "slots": {
+        "d4b-th1": "present",
+        "d4b-th2": "present",
+        "d4b-th3": "present"
+      },
+      "extraClasses": []
+    },
+    "2026-10-23": {
+      "isHoliday": false,
+      "slots": {
+        "d4b-f1": "present",
+        "d4b-f2": "present",
+        "d4b-f3": "present",
+        "d4b-f4": "present"
+      },
+      "extraClasses": []
+    },
+    "2026-10-24": {
+      "isHoliday": false,
+      "slots": {},
+      "extraClasses": []
+    },
+    "2026-10-25": {
+      "isHoliday": false,
+      "slots": {},
+      "extraClasses": []
+    },
+    "2026-10-26": {
+      "isHoliday": false,
+      "slots": {
+        "d4b-m1": "present",
+        "d4b-m2": "present",
+        "d4b-m3": "present",
+        "d4b-m4": "cancelled"
+      },
+      "extraClasses": []
+    },
+    "2026-10-27": {
+      "isHoliday": false,
+      "slots": {
+        "d4b-t1": "present",
+        "d4b-t2": "present",
+        "d4b-t3": "cancelled"
+      },
+      "extraClasses": []
+    },
+    "2026-10-28": {
+      "isHoliday": false,
+      "slots": {
+        "d4b-w1": "present",
+        "d4b-w2": "present",
+        "d4b-w3": "present",
+        "d4b-w4": "present"
+      },
+      "extraClasses": []
+    },
+    "2026-10-29": {
+      "isHoliday": false,
+      "slots": {
+        "d4b-th1": "present",
+        "d4b-th2": "present",
+        "d4b-th3": "present"
+      },
+      "extraClasses": []
+    },
+    "2026-10-30": {
+      "isHoliday": true,
+      "slots": {},
+      "extraClasses": []
+    }
+  }
+}

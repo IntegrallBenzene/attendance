@@ -1,0 +1,3459 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Attendance Matrix | Frosted Glassmorphism Edition</title>
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    /* ==========================================================================
+       DARK FROSTED GLASSMORPHISM DESIGN SYSTEM
+       ========================================================================== */
+    :root {
+      --bg-base: #050505;
+      
+      /* Frosted Glass Panels */
+      --glass-surface: rgba(18, 18, 20, 0.65);
+      --glass-surface-hover: rgba(28, 28, 32, 0.75);
+      --glass-surface-subtle: rgba(255, 255, 255, 0.03);
+      --glass-border: rgba(255, 255, 255, 0.08);
+      --glass-border-highlight: rgba(255, 255, 255, 0.15);
+      --glass-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.05), 0 8px 32px rgba(0, 0, 0, 0.6);
+      
+      --glass-radius-lg: 18px;
+      --glass-radius-md: 14px;
+      --glass-radius-sm: 10px;
+
+      /* Status Indicators & Glass Colors */
+      --color-emerald: #10b981;
+      --color-emerald-glow: rgba(16, 185, 129, 0.45);
+      --color-emerald-glass: rgba(16, 185, 129, 0.25);
+      --color-emerald-border: rgba(16, 185, 129, 0.4);
+
+      --color-rose: #f43f5e;
+      --color-rose-glow: rgba(244, 63, 94, 0.45);
+      --color-rose-glass: rgba(244, 63, 94, 0.25);
+      --color-rose-border: rgba(244, 63, 94, 0.4);
+
+      --color-amber: #f59e0b;
+      --color-amber-glow: rgba(245, 158, 11, 0.45);
+      --color-amber-glass: rgba(245, 158, 11, 0.25);
+      --color-amber-border: rgba(245, 158, 11, 0.4);
+
+      --color-sky: #38bdf8;
+      --color-sky-glow: rgba(56, 189, 248, 0.45);
+      --color-sky-glass: rgba(56, 189, 248, 0.25);
+      --color-sky-border: rgba(56, 189, 248, 0.4);
+
+      --color-purple: #a855f7;
+      --color-purple-glow: rgba(168, 85, 247, 0.45);
+      --color-purple-glass: rgba(168, 85, 247, 0.22);
+      --color-purple-border: rgba(168, 85, 247, 0.4);
+
+      --text-white: #ffffff;
+      --text-gray-100: #f4f4f5;
+      --text-gray-300: #d4d4d8;
+      --text-gray-400: #a1a1aa;
+      --text-gray-500: #71717a;
+      --text-gray-600: #52525b;
+
+      --font-mono: 'JetBrains Mono', 'Fira Code', 'SF Mono', Consolas, monospace;
+      --font-sans: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', Roboto, sans-serif;
+      --ease-glass: cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      background-color: var(--bg-base);
+      color: var(--text-gray-100);
+      font-family: var(--font-sans);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+      line-height: 1.5;
+      position: relative;
+    }
+
+    /* ==========================================================================
+       1. AMBIENT BACKGROUND GLOW LAYER (FIXED RADIAL BLURS)
+       ========================================================================== */
+    .ambient-glow-layer {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .glow-orb {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(120px);
+      opacity: 0.9;
+      pointer-events: none;
+      will-change: transform;
+    }
+
+    .orb-emerald {
+      width: 520px;
+      height: 520px;
+      top: -120px;
+      left: 12%;
+      background: radial-gradient(circle, rgba(16, 185, 129, 0.15) 0%, rgba(16, 185, 129, 0) 70%);
+    }
+
+    .orb-sky {
+      width: 560px;
+      height: 560px;
+      top: 30%;
+      right: -80px;
+      background: radial-gradient(circle, rgba(56, 189, 248, 0.15) 0%, rgba(56, 189, 248, 0) 70%);
+    }
+
+    .orb-indigo {
+      width: 620px;
+      height: 620px;
+      bottom: -100px;
+      left: 8%;
+      background: radial-gradient(circle, rgba(99, 102, 241, 0.15) 0%, rgba(99, 102, 241, 0) 70%);
+    }
+
+    .orb-rose {
+      width: 480px;
+      height: 480px;
+      bottom: 22%;
+      right: 22%;
+      background: radial-gradient(circle, rgba(244, 63, 94, 0.12) 0%, rgba(244, 63, 94, 0) 70%);
+    }
+
+    /* Monospace Utility */
+    .mono {
+      font-family: var(--font-mono);
+      letter-spacing: -0.02em;
+    }
+
+    /* App Container */
+    .app-container {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 24px 20px 56px;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    /* ==========================================================================
+       2. FROSTED GLASS PANELS & STRUCTURAL ELEMENTS
+       ========================================================================== */
+    header {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 18px 24px;
+      background: var(--glass-surface);
+      backdrop-filter: blur(16px) saturate(180%);
+      -webkit-backdrop-filter: blur(16px) saturate(180%);
+      border: 1px solid var(--glass-border);
+      border-top: 1px solid var(--glass-border-highlight);
+      border-radius: var(--glass-radius-lg);
+      box-shadow: var(--glass-shadow);
+      transition: all 0.25s var(--ease-glass);
+    }
+
+    .header-branding {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .brand-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 5px 12px;
+      background: rgba(16, 185, 129, 0.1);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      border-top: 1px solid rgba(16, 185, 129, 0.5);
+      border-radius: 9999px;
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: var(--color-emerald);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      box-shadow: 0 0 14px rgba(16, 185, 129, 0.2);
+    }
+
+    .brand-badge .pulse-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--color-emerald);
+      box-shadow: 0 0 10px var(--color-emerald);
+      animation: pulseGlow 2.5s infinite;
+    }
+
+    @keyframes pulseGlow {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.5; transform: scale(0.85); }
+    }
+
+    h1 {
+      font-size: 1.45rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      color: var(--text-white);
+      text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+    }
+
+    .header-actions {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px;
+    }
+
+    /* Common Glass Buttons */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      background: rgba(255, 255, 255, 0.04);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-top: 1px solid rgba(255, 255, 255, 0.16);
+      color: var(--text-gray-300);
+      padding: 8px 16px;
+      border-radius: 10px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s var(--ease-glass);
+      user-select: none;
+      font-family: var(--font-mono);
+      box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.04);
+    }
+
+    .btn:hover:not(:disabled) {
+      background: rgba(255, 255, 255, 0.09);
+      border-color: rgba(255, 255, 255, 0.22);
+      color: var(--text-white);
+      transform: translateY(-1px);
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+    }
+
+    .btn:disabled {
+      opacity: 0.3;
+      cursor: not-allowed;
+      border-color: rgba(255, 255, 255, 0.04);
+      transform: none !important;
+    }
+
+    .btn-primary {
+      background: rgba(16, 185, 129, 0.12);
+      border-color: var(--color-emerald-border);
+      border-top: 1px solid rgba(16, 185, 129, 0.6);
+      color: #34d399;
+    }
+
+    .btn-primary:hover:not(:disabled) {
+      background: rgba(16, 185, 129, 0.25);
+      border-color: var(--color-emerald);
+      color: #ffffff;
+      box-shadow: 0 0 18px rgba(16, 185, 129, 0.4);
+    }
+
+    .btn-danger {
+      background: rgba(244, 63, 94, 0.1);
+      border-color: var(--color-rose-border);
+      border-top: 1px solid rgba(244, 63, 94, 0.6);
+      color: #fb7185;
+    }
+
+    .btn-danger:hover:not(:disabled) {
+      background: rgba(244, 63, 94, 0.25);
+      border-color: var(--color-rose);
+      color: #ffffff;
+      box-shadow: 0 0 18px rgba(244, 63, 94, 0.4);
+    }
+
+    .btn-sky {
+      background: rgba(56, 189, 248, 0.1);
+      border-color: var(--color-sky-border);
+      border-top: 1px solid rgba(56, 189, 248, 0.6);
+      color: #38bdf8;
+    }
+
+    .btn-sky:hover:not(:disabled) {
+      background: rgba(56, 189, 248, 0.25);
+      border-color: var(--color-sky);
+      color: #ffffff;
+      box-shadow: 0 0 18px rgba(56, 189, 248, 0.4);
+    }
+
+    /* OVERVIEW STATS BANNER */
+    .hero-stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 16px;
+    }
+
+    .stat-card {
+      background: var(--glass-surface);
+      backdrop-filter: blur(16px) saturate(180%);
+      -webkit-backdrop-filter: blur(16px) saturate(180%);
+      border: 1px solid var(--glass-border);
+      border-top: 1px solid var(--glass-border-highlight);
+      border-radius: var(--glass-radius-md);
+      box-shadow: var(--glass-shadow);
+      padding: 18px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      position: relative;
+      overflow: hidden;
+      transition: all 0.25s var(--ease-glass);
+    }
+
+    .stat-card:hover {
+      transform: translateY(-2px);
+      background: var(--glass-surface-hover);
+      box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.08), 0 12px 36px rgba(0, 0, 0, 0.7);
+    }
+
+    .stat-card::after {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    .stat-card.safe::after {
+      background: linear-gradient(90deg, #10b981, rgba(16, 185, 129, 0.2));
+      box-shadow: 0 0 12px var(--color-emerald);
+    }
+
+    .stat-card.danger::after {
+      background: linear-gradient(90deg, #f43f5e, rgba(244, 63, 94, 0.2));
+      box-shadow: 0 0 12px var(--color-rose);
+    }
+
+    .stat-card.neutral::after {
+      background: linear-gradient(90deg, #38bdf8, rgba(56, 189, 248, 0.2));
+      box-shadow: 0 0 12px var(--color-sky);
+    }
+
+    .stat-label {
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--text-gray-400);
+      font-family: var(--font-mono);
+      font-weight: 700;
+    }
+
+    .stat-value-group {
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+    }
+
+    .stat-number {
+      font-size: 2.3rem;
+      font-weight: 800;
+      line-height: 1;
+      font-family: var(--font-mono);
+      letter-spacing: -0.03em;
+    }
+
+    .stat-sub {
+      font-size: 0.8rem;
+      color: var(--text-gray-400);
+      font-family: var(--font-mono);
+    }
+
+    .stat-detail {
+      font-size: 0.76rem;
+      color: var(--text-gray-400);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-family: var(--font-mono);
+    }
+
+    /* BADGES (FROSTED GLASS TREATMENT) */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      font-family: var(--font-mono);
+      letter-spacing: 0.03em;
+      white-space: nowrap;
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+    }
+
+    .badge-emerald {
+      background: rgba(16, 185, 129, 0.15);
+      border: 1px solid rgba(16, 185, 129, 0.35);
+      border-top: 1px solid rgba(16, 185, 129, 0.6);
+      color: #34d399;
+      box-shadow: 0 0 10px rgba(16, 185, 129, 0.15);
+    }
+
+    .badge-rose {
+      background: rgba(244, 63, 94, 0.15);
+      border: 1px solid rgba(244, 63, 94, 0.35);
+      border-top: 1px solid rgba(244, 63, 94, 0.6);
+      color: #fb7185;
+      box-shadow: 0 0 10px rgba(244, 63, 94, 0.15);
+    }
+
+    .badge-amber {
+      background: rgba(245, 158, 11, 0.15);
+      border: 1px solid rgba(245, 158, 11, 0.35);
+      border-top: 1px solid rgba(245, 158, 11, 0.6);
+      color: #fbbf24;
+      box-shadow: 0 0 10px rgba(245, 158, 11, 0.15);
+    }
+
+    .badge-sky {
+      background: rgba(56, 189, 248, 0.15);
+      border: 1px solid rgba(56, 189, 248, 0.35);
+      border-top: 1px solid rgba(56, 189, 248, 0.6);
+      color: #38bdf8;
+      box-shadow: 0 0 10px rgba(56, 189, 248, 0.15);
+    }
+
+    .badge-purple {
+      background: rgba(168, 85, 247, 0.15);
+      border: 1px solid rgba(168, 85, 247, 0.35);
+      border-top: 1px solid rgba(168, 85, 247, 0.65);
+      color: #c084fc;
+      box-shadow: 0 0 12px rgba(168, 85, 247, 0.25);
+    }
+
+    .badge-gray {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      color: var(--text-gray-400);
+    }
+
+    /* NAVIGATION STRIP */
+    .nav-bar-container {
+      background: var(--glass-surface);
+      backdrop-filter: blur(16px) saturate(180%);
+      -webkit-backdrop-filter: blur(16px) saturate(180%);
+      border: 1px solid var(--glass-border);
+      border-top: 1px solid var(--glass-border-highlight);
+      border-radius: var(--glass-radius-lg);
+      box-shadow: var(--glass-shadow);
+      padding: 20px 22px;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    .nav-controls-top {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+    }
+
+    .nav-group-buttons {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .date-indicator {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .date-display-title {
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: var(--text-white);
+      font-family: var(--font-mono);
+      letter-spacing: -0.01em;
+    }
+
+    .date-display-subtitle {
+      font-size: 0.8rem;
+      color: var(--text-gray-400);
+      font-family: var(--font-mono);
+    }
+
+    .date-picker-wrap {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    input[type="date"] {
+      background: rgba(255, 255, 255, 0.04);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-top: 1px solid rgba(255, 255, 255, 0.18);
+      color: var(--text-gray-100);
+      padding: 7px 12px;
+      border-radius: 8px;
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      outline: none;
+      cursor: pointer;
+      transition: all 0.2s var(--ease-glass);
+    }
+
+    input[type="date"]:hover, input[type="date"]:focus {
+      border-color: var(--color-sky);
+      background: rgba(255, 255, 255, 0.08);
+      box-shadow: 0 0 12px rgba(56, 189, 248, 0.25);
+    }
+
+    input[type="date"]::-webkit-calendar-picker-indicator {
+      filter: invert(0.8);
+      cursor: pointer;
+    }
+
+    /* WEEK STRIP */
+    .week-days-strip {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 8px;
+    }
+
+    .day-pill {
+      background: rgba(255, 255, 255, 0.025);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-top: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 12px;
+      padding: 12px 6px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 5px;
+      cursor: pointer;
+      transition: all 0.2s var(--ease-glass);
+      user-select: none;
+    }
+
+    .day-pill:hover {
+      background: rgba(255, 255, 255, 0.07);
+      border-color: rgba(255, 255, 255, 0.18);
+      transform: translateY(-2px);
+    }
+
+    .day-pill.active {
+      background: rgba(255, 255, 255, 0.1);
+      border-color: rgba(255, 255, 255, 0.4);
+      border-top: 1px solid #ffffff;
+      box-shadow: 0 0 20px rgba(255, 255, 255, 0.15), inset 0 0 8px rgba(255, 255, 255, 0.08);
+    }
+
+    .day-pill.today {
+      border-color: var(--color-sky-border);
+      box-shadow: 0 0 14px rgba(56, 189, 248, 0.2);
+    }
+
+    .day-pill.holiday {
+      border-color: var(--color-amber-border);
+      background: rgba(245, 158, 11, 0.08);
+    }
+
+    .day-pill-name {
+      font-size: 0.7rem;
+      font-family: var(--font-mono);
+      color: var(--text-gray-400);
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+
+    .day-pill.active .day-pill-name {
+      color: var(--text-white);
+    }
+
+    .day-pill-date {
+      font-size: 1.1rem;
+      font-weight: 800;
+      font-family: var(--font-mono);
+      color: var(--text-gray-300);
+    }
+
+    .day-pill.active .day-pill-date {
+      color: var(--text-white);
+    }
+
+    .day-pill-dots {
+      display: flex;
+      gap: 4px;
+      height: 5px;
+      align-items: center;
+    }
+
+    .day-dot {
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+    }
+
+    .dot-present {
+      background: var(--color-emerald);
+      box-shadow: 0 0 6px var(--color-emerald);
+    }
+
+    .dot-absent {
+      background: var(--color-rose);
+      box-shadow: 0 0 6px var(--color-rose);
+    }
+
+    .day-pill.pending {
+      border-color: rgba(168, 85, 247, 0.5);
+      background: rgba(168, 85, 247, 0.08);
+      box-shadow: 0 0 12px rgba(168, 85, 247, 0.2);
+    }
+
+    .dot-cancelled {
+      background: var(--color-amber);
+      box-shadow: 0 0 6px var(--color-amber);
+    }
+
+    .dot-extra {
+      background: var(--color-sky);
+      box-shadow: 0 0 6px var(--color-sky);
+    }
+
+    .dot-holiday {
+      background: var(--color-amber);
+      box-shadow: 0 0 6px var(--color-amber);
+    }
+
+    .dot-unmarked {
+      background: var(--color-purple);
+      box-shadow: 0 0 8px var(--color-purple);
+      animation: pulseDotPurple 1.8s infinite;
+    }
+
+    @keyframes pulseDotPurple {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.35; transform: scale(0.75); }
+    }
+
+    .unmarked-card {
+      background: rgba(168, 85, 247, 0.04);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border: 1px solid rgba(168, 85, 247, 0.18);
+      border-top: 1px solid rgba(168, 85, 247, 0.4);
+      border-radius: var(--glass-radius-md);
+      padding: 14px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      transition: all 0.2s var(--ease-glass);
+    }
+
+    .unmarked-card:hover {
+      background: rgba(168, 85, 247, 0.09);
+      border-color: rgba(168, 85, 247, 0.35);
+      box-shadow: 0 0 16px rgba(168, 85, 247, 0.15);
+      transform: translateY(-1px);
+    }
+
+    /* DAY ACTIONS BAR */
+    .day-actions-bar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      padding: 14px 20px;
+      background: var(--glass-surface);
+      backdrop-filter: blur(16px) saturate(180%);
+      -webkit-backdrop-filter: blur(16px) saturate(180%);
+      border: 1px solid var(--glass-border);
+      border-top: 1px solid var(--glass-border-highlight);
+      border-radius: var(--glass-radius-md);
+      box-shadow: var(--glass-shadow);
+    }
+
+    .toggle-holiday-wrapper {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .custom-switch {
+      position: relative;
+      width: 42px;
+      height: 24px;
+      display: inline-block;
+    }
+
+    .custom-switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .switch-slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      transition: all 0.2s var(--ease-glass);
+      border-radius: 24px;
+    }
+
+    .switch-slider:before {
+      position: absolute;
+      content: "";
+      height: 16px;
+      width: 16px;
+      left: 3px;
+      bottom: 3px;
+      background-color: var(--text-gray-300);
+      transition: all 0.2s var(--ease-glass);
+      border-radius: 50%;
+    }
+
+    input:checked + .switch-slider {
+      background-color: rgba(245, 158, 11, 0.25);
+      border-color: #f59e0b;
+      box-shadow: 0 0 14px rgba(245, 158, 11, 0.4);
+    }
+
+    input:checked + .switch-slider:before {
+      transform: translateX(18px);
+      background-color: #f59e0b;
+      box-shadow: 0 0 10px #f59e0b;
+    }
+
+    .holiday-label {
+      font-size: 0.84rem;
+      font-weight: 600;
+      font-family: var(--font-mono);
+      color: var(--text-gray-200);
+    }
+
+    .lock-status-badge {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.78rem;
+      font-family: var(--font-mono);
+      color: var(--text-gray-400);
+      background: rgba(255, 255, 255, 0.03);
+      padding: 5px 10px;
+      border-radius: 6px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    /* MAIN CONTENT SPLIT */
+    .main-grid {
+      display: grid;
+      grid-template-columns: 1.15fr 0.85fr;
+      gap: 24px;
+      align-items: start;
+    }
+
+    /* TIMETABLE SLOTS CONTAINER */
+    .timetable-card {
+      background: var(--glass-surface);
+      backdrop-filter: blur(16px) saturate(180%);
+      -webkit-backdrop-filter: blur(16px) saturate(180%);
+      border: 1px solid var(--glass-border);
+      border-top: 1px solid var(--glass-border-highlight);
+      border-radius: var(--glass-radius-lg);
+      box-shadow: var(--glass-shadow);
+      padding: 22px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .section-title-wrap {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .section-title {
+      font-size: 1.05rem;
+      font-weight: 800;
+      letter-spacing: -0.01em;
+      color: var(--text-white);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .slots-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .slot-row {
+      background: rgba(255, 255, 255, 0.025);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-top: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: var(--glass-radius-md);
+      box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.04), 0 4px 16px rgba(0, 0, 0, 0.4);
+      padding: 16px 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      transition: all 0.2s var(--ease-glass);
+    }
+
+    .slot-row:hover {
+      background: rgba(255, 255, 255, 0.045);
+      border-color: rgba(255, 255, 255, 0.15);
+      transform: translateY(-1px);
+    }
+
+    .slot-row.state-present {
+      border-left: 3px solid var(--color-emerald);
+      background: rgba(16, 185, 129, 0.05);
+      box-shadow: 0 0 20px rgba(16, 185, 129, 0.08), inset 0 1px 1px rgba(255, 255, 255, 0.05);
+    }
+
+    .slot-row.state-absent {
+      border-left: 3px solid var(--color-rose);
+      background: rgba(244, 63, 94, 0.05);
+      box-shadow: 0 0 20px rgba(244, 63, 94, 0.08), inset 0 1px 1px rgba(255, 255, 255, 0.05);
+    }
+
+    .slot-row.state-cancelled {
+      border-left: 3px solid var(--color-amber);
+      background: rgba(245, 158, 11, 0.05);
+      box-shadow: 0 0 20px rgba(245, 158, 11, 0.08), inset 0 1px 1px rgba(255, 255, 255, 0.05);
+    }
+
+    .slot-row.slot-muted {
+      opacity: 0.35;
+      pointer-events: none;
+    }
+
+    .slot-top-line {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .slot-info {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .slot-time {
+      font-size: 0.8rem;
+      color: var(--text-gray-300);
+      font-family: var(--font-mono);
+      background: rgba(0, 0, 0, 0.4);
+      padding: 4px 10px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 6px;
+    }
+
+    .slot-subject {
+      font-size: 0.98rem;
+      font-weight: 700;
+      color: var(--text-white);
+      letter-spacing: -0.01em;
+    }
+
+    .dynamic-subject-select {
+      background: rgba(0, 0, 0, 0.55);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      border-top: 1px solid rgba(255, 255, 255, 0.28);
+      color: #38bdf8;
+      border-radius: 6px;
+      padding: 3px 8px;
+      font-size: 0.78rem;
+      font-family: var(--font-mono);
+      font-weight: 700;
+      outline: none;
+      cursor: pointer;
+      transition: all 0.2s var(--ease-glass);
+    }
+
+    .dynamic-subject-select:hover, .dynamic-subject-select:focus {
+      border-color: var(--color-sky);
+      background: rgba(0, 0, 0, 0.75);
+      box-shadow: 0 0 10px rgba(56, 189, 248, 0.3);
+    }
+
+    .dynamic-subject-select option {
+      background: #0d0d11;
+      color: #ffffff;
+    }
+
+    .slot-action-buttons {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* INTERACTIVE BUTTONS WITH GLOWING NEON BORDERS */
+    .slot-btn {
+      padding: 7px 14px;
+      font-size: 0.76rem;
+      font-weight: 700;
+      font-family: var(--font-mono);
+      border-radius: 9999px; /* pill shape */
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      background: rgba(20, 20, 24, 0.5);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      color: var(--text-gray-400);
+      cursor: pointer;
+      transition: all 0.2s var(--ease-glass);
+      user-select: none;
+    }
+
+    .slot-btn:hover:not(:disabled) {
+      color: var(--text-white);
+      border-color: rgba(255, 255, 255, 0.3);
+      transform: translateY(-1px);
+    }
+
+    .slot-btn:disabled {
+      opacity: 0.25;
+      cursor: not-allowed;
+      border-color: rgba(255, 255, 255, 0.04);
+      transform: none !important;
+    }
+
+    /* Present: Glass emerald pill with glowing neon borders on hover and active */
+    .slot-btn.btn-present:hover:not(:disabled) {
+      background: rgba(16, 185, 129, 0.18);
+      border-color: var(--color-emerald);
+      color: #6ee7b7;
+      box-shadow: 0 0 14px rgba(16, 185, 129, 0.4);
+    }
+
+    .slot-btn.active-present {
+      background: var(--color-emerald-glass) !important;
+      border-color: var(--color-emerald) !important;
+      color: #ffffff !important;
+      font-weight: 800;
+      box-shadow: 0 0 18px var(--color-emerald-glow), inset 0 0 8px rgba(16, 185, 129, 0.25) !important;
+    }
+
+    /* Absent: Rose glass pill with glowing neon borders on hover and active */
+    .slot-btn.btn-absent:hover:not(:disabled) {
+      background: rgba(244, 63, 94, 0.18);
+      border-color: var(--color-rose);
+      color: #fda4af;
+      box-shadow: 0 0 14px rgba(244, 63, 94, 0.4);
+    }
+
+    .slot-btn.active-absent {
+      background: var(--color-rose-glass) !important;
+      border-color: var(--color-rose) !important;
+      color: #ffffff !important;
+      font-weight: 800;
+      box-shadow: 0 0 18px var(--color-rose-glow), inset 0 0 8px rgba(244, 63, 94, 0.25) !important;
+    }
+
+    /* Cancelled: Amber glass treatment on hover and active */
+    .slot-btn.btn-cancelled:hover:not(:disabled) {
+      background: rgba(245, 158, 11, 0.18);
+      border-color: var(--color-amber);
+      color: #fde68a;
+      box-shadow: 0 0 14px rgba(245, 158, 11, 0.4);
+    }
+
+    .slot-btn.active-cancelled {
+      background: var(--color-amber-glass) !important;
+      border-color: var(--color-amber) !important;
+      color: #ffffff !important;
+      font-weight: 800;
+      box-shadow: 0 0 18px var(--color-amber-glow), inset 0 0 8px rgba(245, 158, 11, 0.25) !important;
+    }
+
+    .slot-btn-delete {
+      background: transparent;
+      border: 1px solid transparent;
+      color: var(--text-gray-500);
+      cursor: pointer;
+      padding: 5px 10px;
+      font-size: 0.8rem;
+      border-radius: 6px;
+      transition: all 0.2s var(--ease-glass);
+    }
+
+    .slot-btn-delete:hover {
+      color: var(--color-rose);
+      border-color: var(--color-rose-border);
+      background: rgba(244, 63, 94, 0.15);
+      box-shadow: 0 0 12px rgba(244, 63, 94, 0.3);
+    }
+
+    .empty-slots-msg {
+      padding: 36px 16px;
+      text-align: center;
+      color: var(--text-gray-400);
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      border: 1px dashed rgba(255, 255, 255, 0.12);
+      border-radius: var(--glass-radius-md);
+      background: rgba(255, 255, 255, 0.015);
+    }
+
+    /* RIGHT COLUMN: SUBJECT ANALYTICS & STATS */
+    .sidebar-analytics {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .subject-cards-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .subject-card {
+      background: rgba(255, 255, 255, 0.025);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-top: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: var(--glass-radius-md);
+      box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.04), 0 4px 16px rgba(0, 0, 0, 0.4);
+      padding: 16px 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      transition: all 0.25s var(--ease-glass);
+    }
+
+    .subject-card:hover {
+      background: rgba(255, 255, 255, 0.045);
+      border-color: rgba(255, 255, 255, 0.16);
+      transform: translateY(-2px);
+      box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.06), 0 8px 24px rgba(0, 0, 0, 0.5);
+    }
+
+    .subject-card-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .subject-title {
+      font-size: 0.98rem;
+      font-weight: 700;
+      color: var(--text-white);
+    }
+
+    .subject-pct {
+      font-size: 1.2rem;
+      font-weight: 800;
+      font-family: var(--font-mono);
+      letter-spacing: -0.02em;
+    }
+
+    .subject-pct.safe { color: var(--color-emerald); text-shadow: 0 0 12px rgba(16, 185, 129, 0.4); }
+    .subject-pct.danger { color: var(--color-rose); text-shadow: 0 0 12px rgba(244, 63, 94, 0.4); }
+    .subject-pct.neutral { color: var(--text-gray-400); }
+
+    /* Progress bar with 75% indicator line */
+    .pct-bar-track {
+      width: 100%;
+      height: 8px;
+      background: rgba(0, 0, 0, 0.5);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 9999px;
+      position: relative;
+      overflow: visible;
+    }
+
+    .pct-bar-fill {
+      height: 100%;
+      border-radius: 9999px;
+      transition: width 0.4s var(--ease-glass), background-color 0.4s var(--ease-glass);
+    }
+
+    .pct-bar-fill.safe {
+      background: linear-gradient(90deg, #10b981, #34d399);
+      box-shadow: 0 0 10px rgba(16, 185, 129, 0.4);
+    }
+
+    .pct-bar-fill.danger {
+      background: linear-gradient(90deg, #f43f5e, #fb7185);
+      box-shadow: 0 0 10px rgba(244, 63, 94, 0.4);
+    }
+
+    .pct-bar-fill.neutral {
+      background: var(--text-gray-600);
+    }
+
+    /* 75% marker pin */
+    .marker-75 {
+      position: absolute;
+      top: -4px;
+      left: 75%;
+      width: 2px;
+      height: 16px;
+      background: #ffffff;
+      box-shadow: 0 0 8px #ffffff;
+      z-index: 2;
+    }
+
+    .subject-card-footer {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      font-size: 0.74rem;
+      font-family: var(--font-mono);
+      color: var(--text-gray-400);
+    }
+
+    /* CHARTS SECTION */
+    .charts-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+
+    .chart-box {
+      background: var(--glass-surface);
+      backdrop-filter: blur(16px) saturate(180%);
+      -webkit-backdrop-filter: blur(16px) saturate(180%);
+      border: 1px solid var(--glass-border);
+      border-top: 1px solid var(--glass-border-highlight);
+      border-radius: var(--glass-radius-lg);
+      box-shadow: var(--glass-shadow);
+      padding: 22px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      min-height: 330px;
+    }
+
+    .chart-wrapper {
+      position: relative;
+      flex: 1;
+      width: 100%;
+      min-height: 250px;
+    }
+
+    /* MODAL (FROSTED GLASS DIALOG) */
+    .modal-backdrop {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.75);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      padding: 16px;
+    }
+
+    .modal-backdrop.open {
+      display: flex;
+    }
+
+    .modal-content {
+      background: rgba(18, 18, 22, 0.85);
+      backdrop-filter: blur(24px) saturate(190%);
+      -webkit-backdrop-filter: blur(24px) saturate(190%);
+      border: 1px solid var(--glass-border);
+      border-top: 1px solid var(--glass-border-highlight);
+      border-radius: var(--glass-radius-lg);
+      width: 100%;
+      max-width: 440px;
+      padding: 26px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.08), 0 24px 60px rgba(0, 0, 0, 0.8);
+      animation: modalPop 0.25s var(--ease-glass);
+    }
+
+    @keyframes modalPop {
+      from { opacity: 0; transform: scale(0.96) translateY(8px); }
+      to { opacity: 1; transform: scale(1) translateY(0); }
+    }
+
+    .modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .modal-title {
+      font-size: 1.15rem;
+      font-weight: 800;
+      color: var(--text-white);
+      letter-spacing: -0.02em;
+    }
+
+    .btn-close {
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: var(--text-gray-400);
+      font-size: 1.2rem;
+      cursor: pointer;
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      line-height: 1;
+      transition: all 0.2s var(--ease-glass);
+    }
+
+    .btn-close:hover {
+      color: var(--text-white);
+      background: rgba(255, 255, 255, 0.15);
+      border-color: rgba(255, 255, 255, 0.25);
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+    }
+
+    .form-label {
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--text-gray-300);
+      font-family: var(--font-mono);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    .form-input, .form-select {
+      background: rgba(0, 0, 0, 0.4);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-top: 1px solid rgba(255, 255, 255, 0.16);
+      color: var(--text-white);
+      padding: 10px 14px;
+      border-radius: 8px;
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      outline: none;
+      transition: all 0.2s var(--ease-glass);
+    }
+
+    .form-input:focus, .form-select:focus {
+      border-color: var(--color-sky);
+      background: rgba(0, 0, 0, 0.6);
+      box-shadow: 0 0 14px rgba(56, 189, 248, 0.3);
+    }
+
+    .modal-actions {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 12px;
+      margin-top: 8px;
+    }
+
+    /* TOAST NOTIFICATION */
+    .toast-container {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      z-index: 2000;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      pointer-events: none;
+    }
+
+    .toast {
+      background: rgba(18, 18, 22, 0.85);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid var(--glass-border);
+      border-top: 1px solid var(--glass-border-highlight);
+      color: var(--text-gray-100);
+      padding: 12px 18px;
+      border-radius: 10px;
+      font-family: var(--font-mono);
+      font-size: 0.82rem;
+      box-shadow: 0 14px 36px rgba(0, 0, 0, 0.8);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      animation: fadeIn 0.2s var(--ease-glass);
+    }
+
+    .toast.success {
+      border-color: var(--color-emerald-border);
+      box-shadow: 0 8px 30px rgba(16, 185, 129, 0.2);
+    }
+
+    .toast.warn {
+      border-color: var(--color-amber-border);
+      box-shadow: 0 8px 30px rgba(245, 158, 11, 0.2);
+    }
+
+    .toast.error {
+      border-color: var(--color-rose-border);
+      box-shadow: 0 8px 30px rgba(244, 63, 94, 0.2);
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* RESPONSIVE DESIGN */
+    @media (max-width: 900px) {
+      .main-grid {
+        grid-template-columns: 1fr;
+      }
+      .charts-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .app-container {
+        padding: 14px 14px 40px;
+        gap: 18px;
+      }
+      header {
+        flex-direction: column;
+        align-items: flex-start;
+        padding: 16px;
+      }
+      .header-actions {
+        width: 100%;
+        justify-content: flex-start;
+      }
+      .nav-controls-top {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      .week-days-strip {
+        gap: 5px;
+      }
+      .day-pill {
+        padding: 8px 3px;
+      }
+      .day-pill-name {
+        font-size: 0.65rem;
+      }
+      .day-pill-date {
+        font-size: 0.95rem;
+      }
+      .slot-top-line {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+      }
+      .slot-action-buttons {
+        width: 100%;
+        justify-content: space-between;
+      }
+      .slot-btn {
+        flex: 1;
+        text-align: center;
+        padding: 8px 10px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- AMBIENT BACKGROUND GLOW LAYER -->
+  <div class="ambient-glow-layer" aria-hidden="true">
+    <div class="glow-orb orb-emerald"></div>
+    <div class="glow-orb orb-sky"></div>
+    <div class="glow-orb orb-indigo"></div>
+    <div class="glow-orb orb-rose"></div>
+  </div>
+
+  <div class="app-container">
+    <!-- TOP HEADER -->
+    <header>
+      <div class="header-branding">
+        <div class="brand-badge">
+          <span class="pulse-dot"></span>
+          <span>75% Matrix</span>
+        </div>
+        <h1>Attendance Tracker</h1>
+        <button class="badge badge-purple mono" id="btnUnmarkedBadge" style="cursor: pointer; border-radius: 9999px; padding: 6px 12px; margin-left: 6px; transition: all 0.2s var(--ease-glass);" title="Click to review unmarked dates">
+          <span style="display:inline-block; width:6px; height:6px; border-radius:50%; background:var(--color-purple); margin-right:6px;"></span>
+          Checking...
+        </button>
+      </div>
+      <div class="header-actions">
+        <button class="btn btn-primary" id="btnDiskSync" title="Sync directly to physical attendance_data.json on disk">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+          <span id="diskSyncBtnText">Sync Local Disk</span>
+        </button>
+        <button class="btn btn-sky" id="btnExportData" title="Export JSON backup">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Export Data
+        </button>
+        <button class="btn" id="btnImportData" title="Import JSON backup">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          Import Data
+        </button>
+        <input type="file" id="fileInput" accept=".json" style="display:none;">
+        <button class="btn btn-danger" id="btnResetData" title="Reset all records">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+          Reset
+        </button>
+      </div>
+    </header>
+
+    <!-- OVERVIEW HERO STATS -->
+    <section class="hero-stats-grid" id="aggregateHeroStats">
+      <!-- Injected by JavaScript -->
+    </section>
+
+    <!-- NAVIGATION & WEEK STRIP -->
+    <section class="nav-bar-container">
+      <div class="nav-controls-top">
+        <div class="date-indicator">
+          <div>
+            <div class="date-display-title" id="currentDateTitle">Monday, Oct 12, 2026</div>
+            <div class="date-display-subtitle" id="currentDateSubtitle">Week 4 • Semester Calendar</div>
+          </div>
+        </div>
+
+        <div class="nav-group-buttons">
+          <button class="btn" id="btnPrevWeek" title="Previous Week">« Week</button>
+          <button class="btn" id="btnPrevDay" title="Previous Day">‹ Day</button>
+          <button class="btn btn-primary" id="btnToday" title="Jump to Today">Today</button>
+          <button class="btn" id="btnNextDay" title="Next Day">Day ›</button>
+          <button class="btn" id="btnNextWeek" title="Next Week">Week »</button>
+          <div class="date-picker-wrap">
+            <input type="date" id="datePickerInput" min="2026-09-21" title="Select date">
+          </div>
+        </div>
+      </div>
+
+      <!-- 7-Day Week Strip -->
+      <div class="week-days-strip" id="weekDaysStrip">
+        <!-- Injected by JavaScript -->
+      </div>
+    </section>
+
+    <!-- DAY LEVEL CONTROLS & GATEKEEPING BAR -->
+    <div class="day-actions-bar">
+      <label class="toggle-holiday-wrapper" title="Mark this date as holiday or day off">
+        <div class="custom-switch">
+          <input type="checkbox" id="holidayCheckbox">
+          <span class="switch-slider"></span>
+        </div>
+        <span class="holiday-label">Mark Entire Day as Holiday or OFF</span>
+      </label>
+
+      <div style="display:flex; align-items:center; gap:12px;">
+        <span class="lock-status-badge" id="futureLockBadge" style="display:none;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          Future Date (Locked)
+        </span>
+        <button class="btn btn-sky" id="btnAddExtraClass">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Add Extra Class
+        </button>
+      </div>
+    </div>
+
+    <!-- MAIN GRID: DAILY SLOTS & SUBJECT CARDS -->
+    <main class="main-grid">
+      <!-- LEFT: TIMETABLE SCHEDULE -->
+      <section class="timetable-card">
+        <div class="section-title-wrap">
+          <div class="section-title">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            Daily Class Slots
+          </div>
+          <span class="badge badge-gray mono" id="slotsCountBadge">0 Sessions</span>
+        </div>
+
+        <div class="slots-list" id="slotsListContainer">
+          <!-- Injected by JavaScript -->
+        </div>
+      </section>
+
+      <!-- RIGHT: 75% BUNK ANALYTICS ENGINE CARDS -->
+      <section class="sidebar-analytics">
+        <div class="timetable-card">
+          <div class="section-title-wrap">
+            <div class="section-title">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+              Subject Attendance & 75% Matrix
+            </div>
+            <span class="badge badge-emerald mono" id="safeSubjectsBadge">-- Safe</span>
+          </div>
+
+          <div class="subject-cards-list" id="subjectCardsContainer">
+            <!-- Injected by JavaScript -->
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- CHART.JS VISUALIZATIONS -->
+    <section class="charts-grid">
+      <div class="chart-box">
+        <div class="section-title">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+          Subject Comparison vs 75% Threshold
+        </div>
+        <div class="chart-wrapper">
+          <canvas id="subjectBarChart"></canvas>
+        </div>
+      </div>
+
+      <div class="chart-box">
+        <div class="section-title">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+          Semester Weekly Attendance Progression
+        </div>
+        <div class="chart-wrapper">
+          <canvas id="weeklyTrendChart"></canvas>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- MODAL: ADD EXTRA CLASS -->
+  <div class="modal-backdrop" id="extraClassModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 class="modal-title">Add Extra Class</h3>
+        <button class="btn-close" id="btnCloseModal">&times;</button>
+      </div>
+
+      <form id="extraClassForm">
+        <div class="form-group">
+          <label class="form-label" for="extraSubjectInput">Subject Name</label>
+          <input type="text" id="extraSubjectInput" class="form-input" list="subjectDatalist" placeholder="e.g. FVM, M1, PCC" required autocomplete="off">
+          <datalist id="subjectDatalist">
+            <option value="UHV-1">
+            <option value="FVM">
+            <option value="FOP">
+            <option value="FOP Lab">
+            <option value="M1">
+            <option value="M1 Tutorial">
+            <option value="PCC">
+            <option value="BWP Lab">
+            <option value="Hardware Lab">
+            <option value="PCB Lab">
+          </datalist>
+        </div>
+
+        <div class="form-group" style="margin-top:12px;">
+          <label class="form-label" for="extraTimeInput">Time Slot</label>
+          <input type="text" id="extraTimeInput" class="form-input" placeholder="e.g. 14:30 - 15:30" value="14:30 - 15:30" required>
+        </div>
+
+        <div class="form-group" style="margin-top:12px;">
+          <label class="form-label" for="extraInitialStatus">Initial Status</label>
+          <select id="extraInitialStatus" class="form-select">
+            <option value="unrecorded">Unrecorded (Blank)</option>
+            <option value="present">Present (+1 Attended)</option>
+            <option value="absent">Absent (+1 Total)</option>
+            <option value="cancelled">Cancelled (Excluded)</option>
+          </select>
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" class="btn" id="btnCancelModal">Cancel</button>
+          <button type="submit" class="btn btn-sky">Add Session</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: UNMARKED / PENDING DAYS REVIEW -->
+  <div class="modal-backdrop" id="unmarkedDaysModal">
+    <div class="modal-content" style="max-width: 540px;">
+      <div class="modal-header">
+        <div>
+          <h3 class="modal-title">Unmarked Attendance Review</h3>
+          <p style="font-size:0.75rem; color:var(--text-gray-400); font-family:var(--font-mono); margin-top:2px;">
+            Past weekdays with unrecorded class sessions
+          </p>
+        </div>
+        <button class="btn-close" id="btnCloseUnmarkedModal">&times;</button>
+      </div>
+
+      <div id="unmarkedDaysListContainer" style="display:flex; flex-direction:column; gap:10px; max-height:360px; overflow-y:auto; padding-right:4px;">
+        <!-- Injected by JavaScript -->
+      </div>
+
+      <div class="modal-actions" style="justify-content:space-between; margin-top:6px; align-items:center;">
+        <span id="unmarkedSummaryCount" style="font-size:0.75rem; font-family:var(--font-mono); color:var(--text-gray-400);"></span>
+        <button type="button" class="btn" id="btnCloseUnmarkedModalBottom">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOAST CONTAINER -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <!-- ==========================================================================
+       MODERN JAVASCRIPT APPLICATION LOGIC (PRESERVED 100%)
+       ========================================================================== -->
+  <script>
+    (function () {
+      'use strict';
+
+      /* --------------------------------------------------------------------------
+         1. CONSTANTS & TIMETABLE DEFINITIONS
+         -------------------------------------------------------------------------- */
+      const STORAGE_KEY = 'ATTENDANCE_TRACKER_V1';
+      const SEMESTER_START_DATE = '2026-09-21'; // Monday
+      const NEW_TIMETABLE_START_DATE = '2026-10-21'; // Wednesday: New EXTC D4B Timetable
+
+      // Catalog of standard base subjects
+      const KNOWN_SUBJECTS = [
+        'UHV-1',
+        'FVM',
+        'FOP',
+        'FOP Lab',
+        'M1',
+        'M1 Tutorial',
+        'PCC',
+        'BWP Lab',
+        'Hardware Lab',
+        'PCB Lab'
+      ];
+
+      // Week 1 Timetable (Sep 21, 2026 - Sep 27, 2026)
+      // Standard slot timings are applied consistent with the syllabus pattern
+      const WEEK_1_SCHEDULE = {
+        1: [ // Monday Sep 21
+          { id: 'w1-m1', time: '08:30 - 09:30', subject: 'UHV-1' },
+          { id: 'w1-m2', time: '09:30 - 10:30', subject: 'FVM' },
+          { id: 'w1-m3', time: '10:30 - 11:30', subject: 'FOP' }
+        ],
+        2: [ // Tuesday Sep 22
+          { id: 'w1-t1', time: '08:30 - 09:30', subject: 'FVM' },
+          { id: 'w1-t2', time: '09:30 - 10:30', subject: 'UHV-1' }
+        ],
+        3: [ // Wednesday Sep 23
+          { id: 'w1-w1', time: '08:30 - 09:30', subject: 'FOP' },
+          { id: 'w1-w2', time: '09:30 - 10:30', subject: 'M1' },
+          { id: 'w1-w3', time: '10:30 - 12:30', subject: 'PCB Lab' }
+        ],
+        4: [ // Thursday Sep 24
+          { id: 'w1-th1', time: '08:30 - 09:30', subject: 'PCC' },
+          { id: 'w1-th2', time: '09:30 - 10:30', subject: 'M1' },
+          { id: 'w1-th3', time: '10:30 - 12:30', subject: 'BWP Lab' },
+          { id: 'w1-th4', time: '13:30 - 14:30', subject: 'M1 Tutorial' }
+        ],
+        5: [], // Friday Sep 25 is Holiday
+        6: [], // Saturday Off
+        0: []  // Sunday Off
+      };
+
+      // Permanent Schedule Phase 1 (Sep 28, 2026 - Oct 20, 2026)
+      const PERMANENT_SCHEDULE = {
+        1: [ // Monday
+          { id: 'perm-m1', time: '08:30 - 09:30', subject: 'UHV-1' },
+          { id: 'perm-m2', time: '09:30 - 10:30', subject: 'FVM' },
+          { id: 'perm-m3', time: '10:30 - 11:30', subject: 'FOP' }
+        ],
+        2: [ // Tuesday
+          { id: 'perm-t1', time: '08:30 - 09:30', subject: 'FVM' },
+          { id: 'perm-t2', time: '09:30 - 10:30', subject: 'UHV-1' }
+        ],
+        3: [ // Wednesday (Alternating Lab handled dynamically)
+          { id: 'perm-w1', time: '08:30 - 09:30', subject: 'FOP' },
+          { id: 'perm-w2', time: '09:30 - 10:30', subject: 'M1' },
+          { id: 'perm-w3', time: '10:30 - 12:30', subject: 'ALTERNATING_LAB' },
+          { id: 'perm-w4', time: '13:30 - 14:30', subject: 'PCC' }
+        ],
+        4: [ // Thursday
+          { id: 'perm-th1', time: '08:30 - 09:30', subject: 'PCC' },
+          { id: 'perm-th2', time: '09:30 - 10:30', subject: 'M1' },
+          { id: 'perm-th3', time: '10:30 - 12:30', subject: 'BWP Lab' },
+          { id: 'perm-th4', time: '13:30 - 14:30', subject: 'M1 Tutorial' }
+        ],
+        5: [ // Friday
+          { id: 'perm-f1', time: '08:30 - 10:30', subject: 'FOP Lab' },
+          { id: 'perm-f2', time: '10:30 - 11:30', subject: 'M1' },
+          { id: 'perm-f3', time: '11:30 - 12:30', subject: 'FOP' }
+        ],
+        6: [], // Saturday Off
+        0: []  // Sunday Off
+      };
+
+      // New EXTC D4B Timetable (Effective from Oct 21, 2026 onwards)
+      const NEW_D4B_SCHEDULE = {
+        1: [ // Monday
+          { id: 'd4b-m1', time: '08:30 - 09:30', subject: 'UHV-1' },
+          { id: 'd4b-m2', time: '09:30 - 10:30', subject: 'FVM' },
+          { id: 'd4b-m3', time: '10:30 - 11:30', subject: 'FOP' },
+          { id: 'd4b-m4', time: '11:30 - 12:30', subject: 'Extra Lecture', isDynamicExtra: true }
+        ],
+        2: [ // Tuesday
+          { id: 'd4b-t1', time: '08:30 - 09:30', subject: 'FVM' },
+          { id: 'd4b-t2', time: '09:30 - 10:30', subject: 'UHV-1' },
+          { id: 'd4b-t3', time: '10:30 - 11:30', subject: 'Extra Lecture', isDynamicExtra: true }
+        ],
+        3: [ // Wednesday
+          { id: 'd4b-w1', time: '08:30 - 09:30', subject: 'FOP' },
+          { id: 'd4b-w2', time: '09:30 - 10:30', subject: 'M1' },
+          { id: 'd4b-w3', time: '10:30 - 12:30', subject: 'ALTERNATING_LAB' },
+          { id: 'd4b-w4', time: '13:30 - 14:30', subject: 'M1 Tutorial' },
+          { id: 'd4b-w5', time: '14:30 - 15:30', subject: 'Extra Lecture', isDynamicExtra: true }
+        ],
+        4: [ // Thursday
+          { id: 'd4b-th1', time: '08:30 - 09:30', subject: 'PCC' },
+          { id: 'd4b-th2', time: '09:30 - 10:30', subject: 'PCC' },
+          { id: 'd4b-th3', time: '10:30 - 11:30', subject: 'M1' }
+        ],
+        5: [ // Friday
+          { id: 'd4b-f1', time: '08:30 - 10:30', subject: 'FOP Lab' },
+          { id: 'd4b-f2', time: '10:30 - 11:30', subject: 'M1' },
+          { id: 'd4b-f3', time: '11:30 - 12:30', subject: 'FOP' },
+          { id: 'd4b-f4', time: '13:30 - 15:30', subject: 'BWP Lab' }
+        ],
+        6: [], // Saturday Off
+        0: []  // Sunday Off
+      };
+
+      /* --------------------------------------------------------------------------
+         2. STATE MANAGEMENT & STORAGE
+         -------------------------------------------------------------------------- */
+      let appState = {
+        days: {} // Keyed by 'YYYY-MM-DD' -> { isHoliday: bool, slots: { slotId: status }, extraClasses: [] }
+      };
+
+      // Chart.js instances
+      let subjectBarChart = null;
+      let weeklyTrendChart = null;
+
+      // Current navigation date: defaults to today's date
+      let selectedDate = getTodayDate();
+
+      function getTodayDate() {
+        const now = new Date();
+        return new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      }
+
+      function formatDateISO(date) {
+        const y = date.getFullYear();
+        const m = String(date.getMonth() + 1).padStart(2, '0');
+        const d = String(date.getDate()).padStart(2, '0');
+        return `${y}-${m}-${d}`;
+      }
+
+      function parseDateISO(isoStr) {
+        const parts = isoStr.split('-');
+        return new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+      }
+
+      // Master embedded semester recovery backup (All 41 recorded days restored)
+      const EMBEDDED_RECOVERY_BACKUP = {"days":{"2026-09-25":{"isHoliday":true,"slots":{},"extraClasses":[]},"2026-10-12":{"isHoliday":false,"slots":{"perm-m1":"present","perm-m2":"present","perm-m3":"present"},"extraClasses":[]},"2026-09-21":{"isHoliday":false,"slots":{"w1-m1":"absent","w1-m2":"absent","w1-m3":"absent"},"extraClasses":[]},"2026-09-22":{"isHoliday":false,"slots":{"w1-t1":"absent","w1-t2":"absent"},"extraClasses":[]},"2026-09-23":{"isHoliday":false,"slots":{"w1-w1":"absent","w1-w2":"absent","w1-w3":"absent"},"extraClasses":[]},"2026-09-24":{"isHoliday":false,"slots":{"w1-th1":"absent","w1-th2":"absent","w1-th3":"absent","w1-th4":"absent"},"extraClasses":[]},"2026-09-26":{"isHoliday":false,"slots":{},"extraClasses":[]},"2026-09-27":{"isHoliday":false,"slots":{},"extraClasses":[]},"2026-09-28":{"isHoliday":false,"slots":{"perm-m1":"absent","perm-m2":"absent","perm-m3":"absent"},"extraClasses":[]},"2026-09-29":{"isHoliday":false,"slots":{"perm-t1":"present","perm-t2":"present"},"extraClasses":[]},"2026-09-30":{"isHoliday":false,"slots":{"perm-w1":"present","perm-w2":"present","perm-w3":"present","perm-w4":"present"},"extraClasses":[]},"2026-10-01":{"isHoliday":false,"slots":{"perm-th1":"present","perm-th2":"present","perm-th3":"present","perm-th4":"cancelled"},"extraClasses":[]},"2026-10-02":{"isHoliday":true,"slots":{},"extraClasses":[]},"2026-10-03":{"isHoliday":false,"slots":{},"extraClasses":[]},"2026-10-04":{"isHoliday":false,"slots":{},"extraClasses":[]},"2026-10-05":{"isHoliday":false,"slots":{"perm-m1":"present","perm-m2":"present","perm-m3":"present"},"extraClasses":[]},"2026-10-06":{"isHoliday":false,"slots":{"perm-t1":"present","perm-t2":"present"},"extraClasses":[]},"2026-10-07":{"isHoliday":false,"slots":{"perm-w1":"present","perm-w2":"present","perm-w3":"present","perm-w4":"present"},"extraClasses":[]},"2026-10-08":{"isHoliday":false,"slots":{"perm-th1":"present","perm-th2":"present","perm-th3":"present","perm-th4":"present"},"extraClasses":[]},"2026-10-09":{"isHoliday":false,"slots":{"perm-f1":"present","perm-f2":"present","perm-f3":"present"},"extraClasses":[]},"2026-10-10":{"isHoliday":false,"slots":{},"extraClasses":[]},"2026-10-11":{"isHoliday":false,"slots":{},"extraClasses":[]},"2026-10-15":{"isHoliday":false,"slots":{"perm-th1":"cancelled","perm-th2":"present","perm-th3":"present","perm-th4":"present"},"extraClasses":[{"id":"extra_1792070033759_c2kfz","subject":"FOP","time":"14:30 - 15:30","status":"present"}]},"2026-10-13":{"isHoliday":false,"slots":{"perm-t1":"present","perm-t2":"present"},"extraClasses":[]},"2026-10-14":{"isHoliday":false,"slots":{"perm-w1":"present","perm-w2":"present","perm-w3":"present","perm-w4":"present"},"extraClasses":[]},"2026-10-16":{"isHoliday":false,"slots":{"perm-f1":"absent","perm-f2":"absent","perm-f3":"absent"},"extraClasses":[]},"2026-10-19":{"isHoliday":false,"slots":{"perm-m1":"present","perm-m2":"present","perm-m3":"present"},"extraClasses":[]},"2026-10-18":{"isHoliday":false,"slots":{},"extraClasses":[]},"2026-10-17":{"isHoliday":false,"slots":{},"extraClasses":[]},"2026-10-20":{"isHoliday":true,"slots":{},"extraClasses":[]},"2026-11-01":{"isHoliday":false,"slots":{},"extraClasses":[]},"2026-10-21":{"isHoliday":false,"slots":{"d4b-w1":"present","d4b-w2":"present","d4b-w3":"present","d4b-w4":"cancelled"},"extraClasses":[]},"2026-10-22":{"isHoliday":false,"slots":{"d4b-th1":"present","d4b-th2":"present","d4b-th3":"present"},"extraClasses":[]},"2026-10-23":{"isHoliday":false,"slots":{"d4b-f1":"present","d4b-f2":"present","d4b-f3":"present","d4b-f4":"present"},"extraClasses":[]},"2026-10-24":{"isHoliday":false,"slots":{},"extraClasses":[]},"2026-10-25":{"isHoliday":false,"slots":{},"extraClasses":[]},"2026-10-26":{"isHoliday":false,"slots":{"d4b-m1":"present","d4b-m2":"present","d4b-m3":"present","d4b-m4":"cancelled"},"extraClasses":[]},"2026-10-27":{"isHoliday":false,"slots":{"d4b-t1":"present","d4b-t2":"present","d4b-t3":"cancelled"},"extraClasses":[]},"2026-10-28":{"isHoliday":false,"slots":{"d4b-w1":"present","d4b-w2":"present","d4b-w3":"present","d4b-w4":"present"},"extraClasses":[]},"2026-10-29":{"isHoliday":false,"slots":{"d4b-th1":"present","d4b-th2":"present","d4b-th3":"present"},"extraClasses":[]},"2026-10-30":{"isHoliday":true,"slots":{},"extraClasses":[]}}};
+
+      function loadStateFromStorage() {
+        try {
+          const raw = localStorage.getItem(STORAGE_KEY);
+          if (raw) {
+            appState = JSON.parse(raw);
+            if (!appState.days) appState.days = {};
+          } else {
+            appState = { days: {} };
+          }
+
+          // Count meaningful days in current storage
+          const currentRecordedCount = Object.keys(appState.days || {}).filter(d => {
+            const day = appState.days[d];
+            return day.isHoliday || (day.slots && Object.keys(day.slots).length > 0) || (day.extraClasses && day.extraClasses.length > 0);
+          }).length;
+
+          // If local storage has lost data (e.g. fewer than 10 days), automatically merge full recovery backup!
+          if (currentRecordedCount < 10 && EMBEDDED_RECOVERY_BACKUP && EMBEDDED_RECOVERY_BACKUP.days) {
+            console.log('Restoring semester attendance records from recovery backup...');
+            appState.days = Object.assign({}, EMBEDDED_RECOVERY_BACKUP.days, appState.days || {});
+            saveStateToStorage();
+          }
+        } catch (err) {
+          console.error('Error loading state from localStorage:', err);
+          initDefaultState();
+        }
+      }
+
+      function initDefaultState() {
+        appState = JSON.parse(JSON.stringify(EMBEDDED_RECOVERY_BACKUP));
+        saveStateToStorage();
+      }
+
+      /* --------------------------------------------------------------------------
+         2.1. FILE SYSTEM ACCESS API & INDEXEDDB PERSISTENCE (PHYSICAL DISK FILE)
+         -------------------------------------------------------------------------- */
+      const IDB_NAME = 'AttendanceTrackerDiskDB';
+      const IDB_STORE = 'diskHandleStore';
+      let linkedFileHandle = null;
+      let isDiskSyncing = false;
+
+      function openDiskIDB() {
+        return new Promise((resolve) => {
+          if (!window.indexedDB) return resolve(null);
+          const req = indexedDB.open(IDB_NAME, 1);
+          req.onupgradeneeded = (e) => {
+            const db = e.target.result;
+            if (!db.objectStoreNames.contains(IDB_STORE)) {
+              db.createObjectStore(IDB_STORE);
+            }
+          };
+          req.onsuccess = () => resolve(req.result);
+          req.onerror = () => resolve(null);
+        });
+      }
+
+      async function saveFileHandleToIDB(handle) {
+        try {
+          const db = await openDiskIDB();
+          if (!db) return false;
+          const tx = db.transaction(IDB_STORE, 'readwrite');
+          tx.objectStore(IDB_STORE).put(handle, 'activeDiskFile');
+          return new Promise(resolve => {
+            tx.oncomplete = () => resolve(true);
+            tx.onerror = () => resolve(false);
+          });
+        } catch (e) {
+          console.warn('IDB save handle error:', e);
+          return false;
+        }
+      }
+
+      async function getFileHandleFromIDB() {
+        try {
+          const db = await openDiskIDB();
+          if (!db) return null;
+          const tx = db.transaction(IDB_STORE, 'readonly');
+          const req = tx.objectStore(IDB_STORE).get('activeDiskFile');
+          return new Promise(resolve => {
+            req.onsuccess = () => resolve(req.result || null);
+            req.onerror = () => resolve(null);
+          });
+        } catch (e) {
+          console.warn('IDB get handle error:', e);
+          return null;
+        }
+      }
+
+      async function clearFileHandleFromIDB() {
+        try {
+          const db = await openDiskIDB();
+          if (!db) return;
+          const tx = db.transaction(IDB_STORE, 'readwrite');
+          tx.objectStore(IDB_STORE).delete('activeDiskFile');
+        } catch (e) {
+          console.warn('IDB clear handle error:', e);
+        }
+      }
+
+      function updateDiskSyncUI() {
+        const btn = document.getElementById('btnDiskSync');
+        const textSpan = document.getElementById('diskSyncBtnText');
+        if (!btn || !textSpan) return;
+
+        if (linkedFileHandle) {
+          if (isDiskSyncing) {
+            textSpan.textContent = '💾 Syncing...';
+            btn.className = 'btn btn-primary';
+          } else {
+            textSpan.textContent = `🟢 Disk: ${linkedFileHandle.name || 'attendance_data.json'}`;
+            btn.className = 'btn btn-primary';
+            btn.title = `Auto-saving directly to ${linkedFileHandle.name}. Click to re-sync or change file.`;
+          }
+        } else {
+          textSpan.textContent = 'Sync Local Disk';
+          btn.className = 'btn';
+          btn.title = 'Link directly to attendance_data.json on your computer disk';
+        }
+      }
+
+      async function writeStateToDisk() {
+        if (!linkedFileHandle) return false;
+        try {
+          isDiskSyncing = true;
+          updateDiskSyncUI();
+
+          const hasPerm = await linkedFileHandle.queryPermission({ mode: 'readwrite' });
+          if (hasPerm !== 'granted') {
+            isDiskSyncing = false;
+            updateDiskSyncUI();
+            return false;
+          }
+
+          const writable = await linkedFileHandle.createWritable();
+          await writable.write(JSON.stringify(appState, null, 2));
+          await writable.close();
+          isDiskSyncing = false;
+          updateDiskSyncUI();
+          return true;
+        } catch (err) {
+          console.warn('Write to disk file skipped or failed:', err);
+          isDiskSyncing = false;
+          updateDiskSyncUI();
+          return false;
+        }
+      }
+
+      async function handleDiskSyncButtonClick() {
+        if (!window.showSaveFilePicker && !window.showOpenFilePicker) {
+          showToast('File System API not supported in this browser. Use Chrome or Edge.', 'error');
+          return;
+        }
+
+        if (linkedFileHandle) {
+          try {
+            const perm = await linkedFileHandle.requestPermission({ mode: 'readwrite' });
+            if (perm === 'granted') {
+              const wrote = await writeStateToDisk();
+              if (wrote) {
+                showToast(`Auto-sync active with physical file: ${linkedFileHandle.name}`, 'success');
+              } else {
+                showToast(`Permission granted for ${linkedFileHandle.name}`, 'info');
+              }
+              return;
+            }
+          } catch (e) {
+            console.warn('Request permission error:', e);
+          }
+        }
+
+        try {
+          const options = {
+            suggestedName: 'attendance_data.json',
+            types: [{
+              description: 'JSON Files',
+              accept: { 'application/json': ['.json'] }
+            }]
+          };
+
+          const handle = await window.showSaveFilePicker(options);
+          if (!handle) return;
+
+          linkedFileHandle = handle;
+          await saveFileHandleToIDB(handle);
+          await writeStateToDisk();
+          updateDiskSyncUI();
+          showToast(`Direct Disk Link active: ${handle.name}`, 'success');
+        } catch (err) {
+          if (err.name !== 'AbortError') {
+            console.error('File pick error:', err);
+            showToast('Could not link disk file', 'error');
+          }
+        }
+      }
+
+      async function restoreDiskLinkOnStartup() {
+        try {
+          const handle = await getFileHandleFromIDB();
+          if (handle) {
+            linkedFileHandle = handle;
+            updateDiskSyncUI();
+            const perm = await handle.queryPermission({ mode: 'readwrite' });
+            if (perm === 'granted') {
+              try {
+                const file = await handle.getFile();
+                if (file && file.size > 0) {
+                  const txt = await file.text();
+                  const parsed = JSON.parse(txt);
+                  if (parsed && parsed.days) {
+                    const diskDaysCount = Object.keys(parsed.days).length;
+                    const memoryDaysCount = Object.keys(appState.days || {}).length;
+                    // Intelligently merge without losing memory state
+                    if (diskDaysCount >= memoryDaysCount) {
+                      appState.days = Object.assign({}, appState.days, parsed.days);
+                    } else {
+                      // Disk file has fewer records: sync our memory state back to disk
+                      await writeStateToDisk();
+                    }
+                    localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
+                    renderApp();
+                  }
+                }
+              } catch (e) {
+                console.warn('Read initial disk state error:', e);
+              }
+            }
+          }
+        } catch (err) {
+          console.warn('Restore disk link error:', err);
+        }
+      }
+
+      function saveStateToStorage() {
+        try {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
+        } catch (err) {
+          console.error('Failed to save state to localStorage:', err);
+          showToast('Storage quota exceeded or error', 'error');
+        }
+
+        if (linkedFileHandle) {
+          writeStateToDisk();
+        }
+      }
+
+      /* --------------------------------------------------------------------------
+         3. TIMETABLE RESOLUTION ENGINE (Agent 1)
+         -------------------------------------------------------------------------- */
+      // Resolves alternating Wednesday Lab:
+      // - Prior to Oct 21: Anchor Sep 30, 2026 (Hardware Lab), Oct 7 (PCB Lab)
+      // - From Oct 21 onwards: Anchor Oct 21, 2026 (PCB Lab), Oct 28 (Hardware Lab)
+      function getWednesdayAlternatingLab(isoDate) {
+        const date = parseDateISO(isoDate);
+        if (isoDate < NEW_TIMETABLE_START_DATE) {
+          const anchorDate = new Date(2026, 8, 30); // 2026-09-30 (month is 0-indexed: 8 is Sept)
+          const diffMs = date.getTime() - anchorDate.getTime();
+          const diffWeeks = Math.round(diffMs / (7 * 24 * 60 * 60 * 1000));
+          return (Math.abs(diffWeeks) % 2 === 0) ? 'Hardware Lab' : 'PCB Lab';
+        } else {
+          const anchorDate = new Date(2026, 9, 21); // 2026-10-21 (month is 0-indexed: 9 is Oct)
+          const diffMs = date.getTime() - anchorDate.getTime();
+          const diffWeeks = Math.round(diffMs / (7 * 24 * 60 * 60 * 1000));
+          return (Math.abs(diffWeeks) % 2 === 0) ? 'PCB Lab' : 'Hardware Lab';
+        }
+      }
+
+      // Generates timetable slots for any given calendar date
+      function getSlotsForDate(isoDate) {
+        const date = parseDateISO(isoDate);
+        const dayOfWeek = date.getDay(); // 0 is Sunday, 1 is Monday, ... 6 is Saturday
+
+        if (isoDate < SEMESTER_START_DATE) {
+          return [];
+        }
+
+        // Week 1 Timetable (2026-09-21 to 2026-09-27)
+        if (isoDate <= '2026-09-27') {
+          const rawSlots = WEEK_1_SCHEDULE[dayOfWeek] || [];
+          return rawSlots.map(s => ({ ...s, isExtra: false }));
+        }
+
+        // Permanent Schedule Phase 1 (2026-09-28 to 2026-10-20)
+        if (isoDate < NEW_TIMETABLE_START_DATE) {
+          const rawSlots = PERMANENT_SCHEDULE[dayOfWeek] || [];
+          return rawSlots.map(slot => {
+            if (slot.subject === 'ALTERNATING_LAB') {
+              return {
+                ...slot,
+                subject: getWednesdayAlternatingLab(isoDate),
+                isExtra: false
+              };
+            }
+            return { ...slot, isExtra: false };
+          });
+        }
+
+        // New EXTC D4B Timetable (Effective from Oct 21, 2026 onwards)
+        const rawSlots = NEW_D4B_SCHEDULE[dayOfWeek] || [];
+        return rawSlots.map(slot => {
+          if (slot.subject === 'ALTERNATING_LAB') {
+            return {
+              ...slot,
+              subject: getWednesdayAlternatingLab(isoDate),
+              isExtra: false
+            };
+          }
+          return { ...slot, isExtra: false };
+        });
+      }
+
+      /* --------------------------------------------------------------------------
+         4. 75% BUNK ANALYTICS ENGINE (Agent 3)
+         -------------------------------------------------------------------------- */
+      function calculateAllStats() {
+        // Map of subject -> { attended: 0, absent: 0, totalHeld: 0 }
+        const subjectMap = {};
+        KNOWN_SUBJECTS.forEach(sub => {
+          subjectMap[sub] = { attended: 0, absent: 0, totalHeld: 0 };
+        });
+
+        // Traverse all recorded dates in appState
+        Object.keys(appState.days).forEach(dateStr => {
+          const dayData = appState.days[dateStr];
+          if (!dayData || dayData.isHoliday) {
+            // Day is marked as holiday: all slots muted and completely excluded
+            return;
+          }
+
+          // Process regular slots
+          const standardSlots = getSlotsForDate(dateStr);
+          standardSlots.forEach(slot => {
+            const status = dayData.slots ? dayData.slots[slot.id] : null;
+
+            if (slot.isDynamicExtra) {
+              // Extra lecture is taken by one of the subject teachers.
+              // It is NOT a subject itself and must NEVER have its own 75% card or criteria!
+              const assignedSubject = dayData.dynamicSubjects ? dayData.dynamicSubjects[slot.id] : null;
+              if (assignedSubject && assignedSubject !== 'Extra Lecture' && assignedSubject !== '') {
+                if (!subjectMap[assignedSubject]) {
+                  subjectMap[assignedSubject] = { attended: 0, absent: 0, totalHeld: 0 };
+                }
+                if (status === 'present') {
+                  subjectMap[assignedSubject].attended += 1;
+                  subjectMap[assignedSubject].totalHeld += 1;
+                } else if (status === 'absent') {
+                  subjectMap[assignedSubject].absent += 1;
+                  subjectMap[assignedSubject].totalHeld += 1;
+                }
+              }
+              // If not held, cancelled, or unassigned: completely ignored with zero penalty
+              return;
+            }
+
+            const effectiveSubject = slot.subject;
+            if (!subjectMap[effectiveSubject]) {
+              subjectMap[effectiveSubject] = { attended: 0, absent: 0, totalHeld: 0 };
+            }
+
+            if (status === 'present') {
+              subjectMap[effectiveSubject].attended += 1;
+              subjectMap[effectiveSubject].totalHeld += 1;
+            } else if (status === 'absent') {
+              subjectMap[effectiveSubject].absent += 1;
+              subjectMap[effectiveSubject].totalHeld += 1;
+            }
+            // 'cancelled' or unrecorded are excluded
+          });
+
+          // Process extra classes for this day
+          if (Array.isArray(dayData.extraClasses)) {
+            dayData.extraClasses.forEach(extra => {
+              if (!subjectMap[extra.subject]) {
+                subjectMap[extra.subject] = { attended: 0, absent: 0, totalHeld: 0 };
+              }
+
+              if (extra.status === 'present') {
+                subjectMap[extra.subject].attended += 1;
+                subjectMap[extra.subject].totalHeld += 1;
+              } else if (extra.status === 'absent') {
+                subjectMap[extra.subject].absent += 1;
+                subjectMap[extra.subject].totalHeld += 1;
+              }
+            });
+          }
+        });
+
+        // Compute aggregate metrics
+        let totalAttended = 0;
+        let totalHeld = 0;
+        let totalAbsent = 0;
+
+        const subjectAnalytics = {};
+
+        Object.keys(subjectMap).forEach(sub => {
+          const data = subjectMap[sub];
+          totalAttended += data.attended;
+          totalHeld += data.totalHeld;
+          totalAbsent += data.absent;
+
+          const pct = data.totalHeld > 0 ? (data.attended / data.totalHeld) * 100 : null;
+          let safeBunks = 0;
+          let mustAttend = 0;
+
+          if (pct !== null) {
+            if (pct >= 75) {
+              safeBunks = Math.floor((data.attended - 0.75 * data.totalHeld) / 0.75);
+            } else {
+              mustAttend = Math.ceil((0.75 * data.totalHeld - data.attended) / 0.25);
+            }
+          }
+
+          subjectAnalytics[sub] = {
+            attended: data.attended,
+            absent: data.absent,
+            totalHeld: data.totalHeld,
+            percentage: pct,
+            safeBunks,
+            mustAttend
+          };
+        });
+
+        const overallPct = totalHeld > 0 ? (totalAttended / totalHeld) * 100 : null;
+        let overallSafeBunks = 0;
+        let overallMustAttend = 0;
+
+        if (overallPct !== null) {
+          if (overallPct >= 75) {
+            overallSafeBunks = Math.floor((totalAttended - 0.75 * totalHeld) / 0.75);
+          } else {
+            overallMustAttend = Math.ceil((0.75 * totalHeld - totalAttended) / 0.25);
+          }
+        }
+
+        return {
+          totalAttended,
+          totalHeld,
+          totalAbsent,
+          overallPct,
+          overallSafeBunks,
+          overallMustAttend,
+          subjects: subjectAnalytics
+        };
+      }
+
+      /* --------------------------------------------------------------------------
+         5. UI RENDERING & COMPONENT ORCHESTRATION (Agent 4)
+         -------------------------------------------------------------------------- */
+      function renderApp() {
+        const currentIso = formatDateISO(selectedDate);
+        const todayIso = formatDateISO(getTodayDate());
+        const isFuture = currentIso > todayIso;
+
+        // Ensure day record exists in state
+        if (!appState.days[currentIso]) {
+          appState.days[currentIso] = {
+            isHoliday: (currentIso === '2026-09-25'),
+            slots: {},
+            extraClasses: []
+          };
+        }
+        const dayData = appState.days[currentIso];
+
+        // 1. Render Navigation Titles & Inputs
+        const options = { weekday: 'long', year: 'numeric', month: 'short', day: 'numeric' };
+        document.getElementById('currentDateTitle').textContent = selectedDate.toLocaleDateString('en-US', options);
+
+        // Calculate semester week index
+        const semesterStart = parseDateISO(SEMESTER_START_DATE);
+        const diffWeeks = Math.floor((selectedDate.getTime() - semesterStart.getTime()) / (7 * 24 * 60 * 60 * 1000)) + 1;
+        const weekLabel = diffWeeks > 0 ? `Week ${diffWeeks}` : 'Pre-Semester';
+        const ttVersionLabel = (currentIso >= NEW_TIMETABLE_START_DATE) ? ' • EXTC D4B Timetable' : ' • Semester Calendar';
+        document.getElementById('currentDateSubtitle').textContent = `${weekLabel}${ttVersionLabel}`;
+
+        document.getElementById('datePickerInput').value = currentIso;
+
+        // 2. Day-level Holiday & Lock Gatekeeping
+        const holidayCheckbox = document.getElementById('holidayCheckbox');
+        holidayCheckbox.checked = !!dayData.isHoliday;
+
+        const futureBadge = document.getElementById('futureLockBadge');
+        const btnAddExtraClass = document.getElementById('btnAddExtraClass');
+        if (isFuture) {
+          futureBadge.style.display = 'inline-flex';
+          btnAddExtraClass.disabled = true;
+          btnAddExtraClass.title = 'Future dates only permit Holiday/OFF toggle';
+        } else {
+          futureBadge.style.display = 'none';
+          btnAddExtraClass.disabled = false;
+          btnAddExtraClass.title = 'Add extra class session';
+        }
+
+        // 3. Render 7-Day Week Strip
+        renderWeekStrip(selectedDate);
+
+        // 4. Render Timetable Slots
+        renderSlotsList(currentIso, isFuture, !!dayData.isHoliday);
+
+        // 5. Render Aggregate Hero Metrics
+        const stats = calculateAllStats();
+        renderHeroStats(stats);
+
+        // 6. Render Subject Attendance Cards
+        renderSubjectCards(stats);
+
+        // 7. Render & Update Charts (Agent 5)
+        updateCharts(stats);
+
+        // 8. Update Unmarked / Pending Attendance Status
+        updateUnmarkedStatus();
+      }
+
+      // Renders the 7-day strip centered on the current week (Mon-Sun)
+      function renderWeekStrip(activeDate) {
+        const weekStripContainer = document.getElementById('weekDaysStrip');
+        weekStripContainer.innerHTML = '';
+
+        // Determine Monday of current week
+        const curDay = activeDate.getDay();
+        const distToMon = (curDay === 0 ? -6 : 1 - curDay);
+        const monday = new Date(activeDate);
+        monday.setDate(activeDate.getDate() + distToMon);
+
+        const todayISO = formatDateISO(getTodayDate());
+        const selectedISO = formatDateISO(activeDate);
+        const dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+
+        for (let i = 0; i < 7; i++) {
+          const d = new Date(monday);
+          d.setDate(monday.getDate() + i);
+          const iso = formatDateISO(d);
+
+          const pill = document.createElement('div');
+          pill.className = 'day-pill';
+          if (iso === selectedISO) pill.classList.add('active');
+          if (iso === todayISO) pill.classList.add('today');
+
+          const dData = appState.days[iso];
+          if (dData && dData.isHoliday) {
+            pill.classList.add('holiday');
+          }
+
+          // Check if this is an unmarked/pending past weekday
+          const isPastOrToday = (iso <= todayISO && iso >= SEMESTER_START_DATE);
+          const isWeekend = (d.getDay() === 0 || d.getDay() === 6);
+          let isPendingDay = false;
+          let unrecordedInThisDay = 0;
+
+          if (isPastOrToday && !isWeekend && (!dData || !dData.isHoliday)) {
+            const daySlots = getSlotsForDate(iso);
+            const extra = (dData && Array.isArray(dData.extraClasses)) ? dData.extraClasses : [];
+            let requiredCount = 0;
+            let rec = 0;
+            daySlots.forEach(s => {
+              const st = (dData && dData.slots) ? dData.slots[s.id] : null;
+              const isRecorded = (st === 'present' || st === 'absent' || st === 'cancelled');
+              if (s.isDynamicExtra) {
+                if (isRecorded) {
+                  requiredCount++;
+                  rec++;
+                }
+              } else {
+                requiredCount++;
+                if (isRecorded) rec++;
+              }
+            });
+            extra.forEach(e => {
+              requiredCount++;
+              if (e.status === 'present' || e.status === 'absent' || e.status === 'cancelled') rec++;
+            });
+            if (rec < requiredCount) {
+              isPendingDay = true;
+              unrecordedInThisDay = requiredCount - rec;
+            }
+          }
+
+          if (isPendingDay) {
+            pill.classList.add('pending');
+          }
+
+          // Build dots for status indicators
+          let dotsHtml = '';
+          if (dData && dData.isHoliday) {
+            dotsHtml = `<span class="day-dot dot-holiday" title="Holiday"></span>`;
+          } else if (dData) {
+            const markedKeys = Object.keys(dData.slots || {});
+            const hasExtra = Array.isArray(dData.extraClasses) && dData.extraClasses.length > 0;
+            let presentCount = 0;
+            let absentCount = 0;
+
+            markedKeys.forEach(k => {
+              if (dData.slots[k] === 'present') presentCount++;
+              if (dData.slots[k] === 'absent') absentCount++;
+            });
+
+            if (presentCount > 0) dotsHtml += `<span class="day-dot dot-present"></span>`;
+            if (absentCount > 0) dotsHtml += `<span class="day-dot dot-absent"></span>`;
+            if (hasExtra) dotsHtml += `<span class="day-dot dot-extra"></span>`;
+          }
+
+          if (isPendingDay) {
+            dotsHtml += `<span class="day-dot dot-unmarked" title="${unrecordedInThisDay} unmarked classes pending"></span>`;
+          }
+
+          pill.innerHTML = `
+            <span class="day-pill-name">${dayNames[i]}</span>
+            <span class="day-pill-date">${d.getDate()}</span>
+            <div class="day-pill-dots">${dotsHtml}</div>
+          `;
+
+          pill.addEventListener('click', () => {
+            selectedDate = d;
+            renderApp();
+          });
+
+          weekStripContainer.appendChild(pill);
+        }
+      }
+
+      // Renders all regular slots + extra classes for the selected day
+      function renderSlotsList(currentIso, isFuture, isHoliday) {
+        const container = document.getElementById('slotsListContainer');
+        const badge = document.getElementById('slotsCountBadge');
+        container.innerHTML = '';
+
+        const regularSlots = getSlotsForDate(currentIso);
+        const dayData = appState.days[currentIso] || { slots: {}, extraClasses: [] };
+        const extraClasses = Array.isArray(dayData.extraClasses) ? dayData.extraClasses : [];
+
+        const totalSlotsCount = regularSlots.length + extraClasses.length;
+        badge.textContent = `${totalSlotsCount} ${totalSlotsCount === 1 ? 'Slot' : 'Slots'}`;
+
+        if (totalSlotsCount === 0) {
+          container.innerHTML = `
+            <div class="empty-slots-msg">
+              No classes scheduled for this day (Off / Weekend).<br>
+              Use <strong>"Add Extra Class"</strong> to schedule ad-hoc sessions.
+            </div>
+          `;
+          return;
+        }
+
+        // 1. Regular Slots
+        regularSlots.forEach(slot => {
+          const currentStatus = dayData.slots ? dayData.slots[slot.id] : null;
+          const effectiveSubject = (dayData.dynamicSubjects && dayData.dynamicSubjects[slot.id]) || slot.subject;
+          const slotRow = document.createElement('div');
+          slotRow.className = 'slot-row';
+          if (isHoliday) slotRow.classList.add('slot-muted');
+          if (currentStatus) slotRow.classList.add(`state-${currentStatus}`);
+
+          let subjectHtml = '';
+          if (slot.isDynamicExtra) {
+            const hasAssignedSub = effectiveSubject && effectiveSubject !== 'Extra Lecture' && effectiveSubject !== '';
+            subjectHtml = `
+              <div style="display:inline-flex; align-items:center; gap:8px; flex-wrap:wrap;">
+                <span class="badge badge-sky" style="font-size:0.68rem;">Extra Slot</span>
+                <select class="dynamic-subject-select" data-slot-id="${slot.id}" ${(isFuture || isHoliday) ? 'disabled' : ''} title="Select which subject took this extra lecture">
+                  <option value="" ${!hasAssignedSub ? 'selected' : ''}>-- Choose Subject (if held) --</option>
+                  <option value="M1" ${effectiveSubject === 'M1' ? 'selected' : ''}>M1</option>
+                  <option value="FVM" ${effectiveSubject === 'FVM' ? 'selected' : ''}>FVM</option>
+                  <option value="FOP" ${effectiveSubject === 'FOP' ? 'selected' : ''}>FOP</option>
+                  <option value="PCC" ${effectiveSubject === 'PCC' ? 'selected' : ''}>PCC</option>
+                  <option value="UHV-1" ${effectiveSubject === 'UHV-1' ? 'selected' : ''}>UHV-1</option>
+                  <option value="M1 Tutorial" ${effectiveSubject === 'M1 Tutorial' ? 'selected' : ''}>M1 Tutorial</option>
+                  <option value="FOP Lab" ${effectiveSubject === 'FOP Lab' ? 'selected' : ''}>FOP Lab</option>
+                  <option value="BWP Lab" ${effectiveSubject === 'BWP Lab' ? 'selected' : ''}>BWP Lab</option>
+                  <option value="PCB Lab" ${effectiveSubject === 'PCB Lab' ? 'selected' : ''}>PCB Lab</option>
+                  <option value="Hardware Lab" ${effectiveSubject === 'Hardware Lab' ? 'selected' : ''}>Hardware Lab</option>
+                </select>
+                <span style="font-size:0.7rem; color:var(--text-gray-400); font-family:var(--font-mono);">(Optional slot)</span>
+              </div>
+            `;
+          } else {
+            subjectHtml = `<span class="slot-subject">${escapeHtml(slot.subject)}</span>`;
+          }
+
+          slotRow.innerHTML = `
+            <div class="slot-top-line">
+              <div class="slot-info">
+                <span class="slot-time">${slot.time}</span>
+                ${subjectHtml}
+                ${isHoliday ? '<span class="badge badge-amber">Day Off</span>' : ''}
+              </div>
+              <div class="slot-action-buttons">
+                <button class="slot-btn btn-present ${currentStatus === 'present' ? 'active-present' : ''}" 
+                  ${(isFuture || isHoliday) ? 'disabled' : ''} 
+                  title="${isFuture ? 'Future date locked' : 'Mark Present'}">
+                  Present
+                </button>
+                <button class="slot-btn btn-absent ${currentStatus === 'absent' ? 'active-absent' : ''}" 
+                  ${(isFuture || isHoliday) ? 'disabled' : ''} 
+                  title="${isFuture ? 'Future date locked' : 'Mark Absent'}">
+                  Absent
+                </button>
+                <button class="slot-btn btn-cancelled ${currentStatus === 'cancelled' ? 'active-cancelled' : ''}" 
+                  ${(isFuture || isHoliday) ? 'disabled' : ''} 
+                  title="${isFuture ? 'Future date locked' : 'Mark Cancelled'}">
+                  Cancelled
+                </button>
+              </div>
+            </div>
+          `;
+
+          // Dropdown change event
+          if (slot.isDynamicExtra) {
+            const selectElem = slotRow.querySelector('.dynamic-subject-select');
+            if (selectElem) {
+              selectElem.addEventListener('change', (e) => {
+                if (!appState.days[currentIso]) {
+                  appState.days[currentIso] = { isHoliday: false, slots: {}, extraClasses: [] };
+                }
+                if (!appState.days[currentIso].dynamicSubjects) {
+                  appState.days[currentIso].dynamicSubjects = {};
+                }
+                appState.days[currentIso].dynamicSubjects[slot.id] = e.target.value;
+                saveStateToStorage();
+                renderApp();
+                showToast(`Assigned extra slot to ${e.target.value}`, 'success');
+              });
+            }
+          }
+
+          // Button click events
+          const btnPresent = slotRow.querySelector('.btn-present');
+          const btnAbsent = slotRow.querySelector('.btn-absent');
+          const btnCancelled = slotRow.querySelector('.btn-cancelled');
+
+          btnPresent.addEventListener('click', () => toggleSlotStatus(currentIso, slot.id, 'present'));
+          btnAbsent.addEventListener('click', () => toggleSlotStatus(currentIso, slot.id, 'absent'));
+          btnCancelled.addEventListener('click', () => toggleSlotStatus(currentIso, slot.id, 'cancelled'));
+
+          container.appendChild(slotRow);
+        });
+
+        // 2. Extra Classes
+        extraClasses.forEach((extra) => {
+          const slotRow = document.createElement('div');
+          slotRow.className = 'slot-row';
+          if (isHoliday) slotRow.classList.add('slot-muted');
+          if (extra.status) slotRow.classList.add(`state-${extra.status}`);
+
+          slotRow.innerHTML = `
+            <div class="slot-top-line">
+              <div class="slot-info">
+                <span class="badge badge-sky">Extra Class</span>
+                <span class="slot-time">${escapeHtml(extra.time)}</span>
+                <span class="slot-subject">${escapeHtml(extra.subject)}</span>
+                ${isHoliday ? '<span class="badge badge-amber">Day Off</span>' : ''}
+              </div>
+              <div class="slot-action-buttons">
+                <button class="slot-btn btn-present ${extra.status === 'present' ? 'active-present' : ''}" 
+                  ${(isFuture || isHoliday) ? 'disabled' : ''} 
+                  title="Mark Present">
+                  Present
+                </button>
+                <button class="slot-btn btn-absent ${extra.status === 'absent' ? 'active-absent' : ''}" 
+                  ${(isFuture || isHoliday) ? 'disabled' : ''} 
+                  title="Mark Absent">
+                  Absent
+                </button>
+                <button class="slot-btn btn-cancelled ${extra.status === 'cancelled' ? 'active-cancelled' : ''}" 
+                  ${(isFuture || isHoliday) ? 'disabled' : ''} 
+                  title="Mark Cancelled">
+                  Cancelled
+                </button>
+                <button class="slot-btn-delete" title="Delete Extra Class" ${isHoliday ? 'disabled' : ''}>
+                  &times;
+                </button>
+              </div>
+            </div>
+          `;
+
+          const btnPresent = slotRow.querySelector('.btn-present');
+          const btnAbsent = slotRow.querySelector('.btn-absent');
+          const btnCancelled = slotRow.querySelector('.btn-cancelled');
+          const btnDelete = slotRow.querySelector('.slot-btn-delete');
+
+          btnPresent.addEventListener('click', () => toggleExtraStatus(currentIso, extra.id, 'present'));
+          btnAbsent.addEventListener('click', () => toggleExtraStatus(currentIso, extra.id, 'absent'));
+          btnCancelled.addEventListener('click', () => toggleExtraStatus(currentIso, extra.id, 'cancelled'));
+          btnDelete.addEventListener('click', () => deleteExtraClass(currentIso, extra.id));
+
+          container.appendChild(slotRow);
+        });
+      }
+
+      // Slot status toggling: clicking an active status clears it (blank/unrecorded)
+      function toggleSlotStatus(isoDate, slotId, newStatus) {
+        if (!appState.days[isoDate]) {
+          appState.days[isoDate] = { isHoliday: false, slots: {}, extraClasses: [] };
+        }
+        if (!appState.days[isoDate].slots) {
+          appState.days[isoDate].slots = {};
+        }
+
+        // Check if this is a dynamic extra slot
+        const daySlots = getSlotsForDate(isoDate);
+        const thisSlot = daySlots.find(s => s.id === slotId);
+        if (thisSlot && thisSlot.isDynamicExtra && (newStatus === 'present' || newStatus === 'absent')) {
+          const assignedSub = appState.days[isoDate].dynamicSubjects ? appState.days[isoDate].dynamicSubjects[slotId] : null;
+          if (!assignedSub || assignedSub === 'Extra Lecture' || assignedSub === '') {
+            showToast('Please select which subject teacher took this extra lecture first!', 'warn');
+            return;
+          }
+        }
+
+        const current = appState.days[isoDate].slots[slotId];
+        if (current === newStatus) {
+          delete appState.days[isoDate].slots[slotId]; // Revert to unrecorded
+        } else {
+          appState.days[isoDate].slots[slotId] = newStatus;
+        }
+
+        saveStateToStorage();
+        renderApp();
+      }
+
+      function toggleExtraStatus(isoDate, extraId, newStatus) {
+        const dayData = appState.days[isoDate];
+        if (!dayData || !Array.isArray(dayData.extraClasses)) return;
+        const extra = dayData.extraClasses.find(e => e.id === extraId);
+        if (!extra) return;
+
+        if (extra.status === newStatus) {
+          delete extra.status; // Revert to unrecorded
+        } else {
+          extra.status = newStatus;
+        }
+
+        saveStateToStorage();
+        renderApp();
+      }
+
+      function deleteExtraClass(isoDate, extraId) {
+        const dayData = appState.days[isoDate];
+        if (!dayData || !Array.isArray(dayData.extraClasses)) return;
+        dayData.extraClasses = dayData.extraClasses.filter(e => e.id !== extraId);
+        saveStateToStorage();
+        showToast('Extra class removed', 'warn');
+        renderApp();
+      }
+
+      // Renders aggregate hero cards
+      function renderHeroStats(stats) {
+        const container = document.getElementById('aggregateHeroStats');
+        const pctFormatted = stats.overallPct !== null ? `${stats.overallPct.toFixed(1)}%` : '--%';
+        const isSafe = stats.overallPct !== null && stats.overallPct >= 75;
+        const isBelow = stats.overallPct !== null && stats.overallPct < 75;
+
+        let statusClass = 'neutral';
+        let statusBadge = '<span class="badge badge-gray">No Sessions Recorded</span>';
+
+        if (isSafe) {
+          statusClass = 'safe';
+          statusBadge = `<span class="badge badge-emerald">Safe to Bunk ${stats.overallSafeBunks} ${stats.overallSafeBunks === 1 ? 'Class' : 'Classes'}</span>`;
+        } else if (isBelow) {
+          statusClass = 'danger';
+          statusBadge = `<span class="badge badge-rose">Must Attend ${stats.overallMustAttend} Consecutive</span>`;
+        }
+
+        container.innerHTML = `
+          <div class="stat-card ${statusClass}">
+            <div class="stat-label">Overall Attendance</div>
+            <div class="stat-value-group">
+              <span class="stat-number ${statusClass}">${pctFormatted}</span>
+              <span class="stat-sub">/ 75.0% Goal</span>
+            </div>
+            <div class="stat-detail">
+              ${statusBadge}
+            </div>
+          </div>
+
+          <div class="stat-card safe">
+            <div class="stat-label">Attended Sessions</div>
+            <div class="stat-value-group">
+              <span class="stat-number" style="color:var(--color-emerald);">${stats.totalAttended}</span>
+              <span class="stat-sub">Present</span>
+            </div>
+            <div class="stat-detail">
+              <span class="badge badge-emerald">+1 per session</span>
+            </div>
+          </div>
+
+          <div class="stat-card danger">
+            <div class="stat-label">Bunked / Absent</div>
+            <div class="stat-value-group">
+              <span class="stat-number" style="color:var(--color-rose);">${stats.totalAbsent}</span>
+              <span class="stat-sub">Missed</span>
+            </div>
+            <div class="stat-detail">
+              <span class="badge badge-rose">+0 attended / +1 held</span>
+            </div>
+          </div>
+
+          <div class="stat-card neutral">
+            <div class="stat-label">Total Held Sessions</div>
+            <div class="stat-value-group">
+              <span class="stat-number" style="color:var(--text-white);">${stats.totalHeld}</span>
+              <span class="stat-sub">Evaluated</span>
+            </div>
+            <div class="stat-detail">
+              <span class="badge badge-gray">Excludes cancelled slots</span>
+            </div>
+          </div>
+        `;
+      }
+
+      // Renders subject cards list
+      function renderSubjectCards(stats) {
+        const container = document.getElementById('subjectCardsContainer');
+        const safeBadge = document.getElementById('safeSubjectsBadge');
+        container.innerHTML = '';
+
+        const subjects = Object.keys(stats.subjects).filter(s => s !== 'Extra Lecture' && s !== 'Extra Class');
+        let safeCount = 0;
+        let evaluatedCount = 0;
+
+        subjects.forEach(sub => {
+          const data = stats.subjects[sub];
+          const hasClasses = data.totalHeld > 0;
+          if (hasClasses) evaluatedCount++;
+
+          const pct = data.percentage;
+          const isSafe = pct !== null && pct >= 75;
+          const isBelow = pct !== null && pct < 75;
+          if (isSafe) safeCount++;
+
+          const pctText = pct !== null ? `${pct.toFixed(1)}%` : '--%';
+          let pctClass = 'neutral';
+          let badgeHtml = '<span class="badge badge-gray">No sessions held</span>';
+
+          if (isSafe) {
+            pctClass = 'safe';
+            badgeHtml = `<span class="badge badge-emerald">Safe to Bunk ${data.safeBunks} ${data.safeBunks === 1 ? 'class' : 'classes'}</span>`;
+          } else if (isBelow) {
+            pctClass = 'danger';
+            badgeHtml = `<span class="badge badge-rose">Must Attend ${data.mustAttend} consecutive</span>`;
+          }
+
+          const barWidth = pct !== null ? Math.min(Math.max(pct, 0), 100) : 0;
+
+          const card = document.createElement('div');
+          card.className = 'subject-card';
+          card.innerHTML = `
+            <div class="subject-card-head">
+              <span class="subject-title">${escapeHtml(sub)}</span>
+              <span class="subject-pct ${pctClass}">${pctText}</span>
+            </div>
+
+            <div class="pct-bar-track">
+              <div class="pct-bar-fill ${pctClass}" style="width: ${barWidth}%;"></div>
+              <div class="marker-75" title="75% Target"></div>
+            </div>
+
+            <div class="subject-card-footer">
+              <span><strong>${data.attended}</strong> / ${data.totalHeld} Held (${data.absent} Bunked)</span>
+              <div>${badgeHtml}</div>
+            </div>
+          `;
+
+          container.appendChild(card);
+        });
+
+        safeBadge.textContent = `${safeCount} / ${evaluatedCount || subjects.length} Safe (≥75%)`;
+      }
+
+      /* --------------------------------------------------------------------------
+         6. CHART.JS VISUALIZATIONS (Agent 5)
+         -------------------------------------------------------------------------- */
+      // Custom Chart.js Plugin to draw crisp 75% red line annotation
+      const target75LinePlugin = {
+        id: 'target75Line',
+        afterDraw(chart) {
+          if (!chart.scales || !chart.scales.y) return;
+          const { ctx, chartArea: { left, right }, scales: { y } } = chart;
+          const yValue = y.getPixelForValue(75);
+
+          if (yValue >= chart.chartArea.top && yValue <= chart.chartArea.bottom) {
+            ctx.save();
+            ctx.strokeStyle = '#f43f5e';
+            ctx.lineWidth = 1.5;
+            ctx.setLineDash([5, 4]);
+            ctx.beginPath();
+            ctx.moveTo(left, yValue);
+            ctx.lineTo(right, yValue);
+            ctx.stroke();
+
+            // Label tag
+            ctx.fillStyle = '#f43f5e';
+            ctx.font = '10px monospace';
+            ctx.fillText('75% Target', right - 64, yValue - 4);
+            ctx.restore();
+          }
+        }
+      };
+
+      function updateCharts(stats) {
+        if (typeof Chart === 'undefined') return;
+
+        // 1. Subject Bar Chart
+        const subjectNames = Object.keys(stats.subjects);
+        const subjectPercentages = [];
+        const backgroundColors = [];
+        const borderColors = [];
+
+        subjectNames.forEach(sub => {
+          const pct = stats.subjects[sub].percentage;
+          if (pct === null) {
+            subjectPercentages.push(0);
+            backgroundColors.push('rgba(113, 113, 122, 0.2)');
+            borderColors.push('#52525b');
+          } else if (pct >= 75) {
+            subjectPercentages.push(pct);
+            backgroundColors.push('rgba(16, 185, 129, 0.45)');
+            borderColors.push('#10b981');
+          } else {
+            subjectPercentages.push(pct);
+            backgroundColors.push('rgba(244, 63, 94, 0.45)');
+            borderColors.push('#f43f5e');
+          }
+        });
+
+        const barCtx = document.getElementById('subjectBarChart').getContext('2d');
+        if (subjectBarChart) {
+          subjectBarChart.data.labels = subjectNames;
+          subjectBarChart.data.datasets[0].data = subjectPercentages;
+          subjectBarChart.data.datasets[0].backgroundColor = backgroundColors;
+          subjectBarChart.data.datasets[0].borderColor = borderColors;
+          subjectBarChart.update();
+        } else {
+          subjectBarChart = new Chart(barCtx, {
+            type: 'bar',
+            data: {
+              labels: subjectNames,
+              datasets: [{
+                label: 'Attendance %',
+                data: subjectPercentages,
+                backgroundColor: backgroundColors,
+                borderColor: borderColors,
+                borderWidth: 1.5,
+                borderRadius: 6
+              }]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              animation: { duration: 300 },
+              scales: {
+                y: {
+                  min: 0,
+                  max: 100,
+                  grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                  ticks: { color: '#a1a1aa', font: { family: 'monospace' } }
+                },
+                x: {
+                  grid: { display: false },
+                  ticks: { color: '#d4d4d8', font: { family: 'monospace', size: 10 } }
+                }
+              },
+              plugins: {
+                legend: { display: false },
+                tooltip: {
+                  backgroundColor: 'rgba(18, 18, 22, 0.9)',
+                  borderColor: 'rgba(255, 255, 255, 0.1)',
+                  borderWidth: 1,
+                  callbacks: {
+                    label: function (ctx) {
+                      const sub = ctx.label;
+                      const sData = stats.subjects[sub];
+                      if (sData.totalHeld === 0) return ' No sessions recorded';
+                      return ` ${ctx.raw.toFixed(1)}% (${sData.attended}/${sData.totalHeld} held)`;
+                    }
+                  }
+                }
+              }
+            },
+            plugins: [target75LinePlugin]
+          });
+        }
+
+        // 2. Weekly Trend Line Chart
+        const weeklyData = computeWeeklyProgression();
+        const trendCtx = document.getElementById('weeklyTrendChart').getContext('2d');
+
+        if (weeklyTrendChart) {
+          weeklyTrendChart.data.labels = weeklyData.labels;
+          weeklyTrendChart.data.datasets[0].data = weeklyData.values;
+          weeklyTrendChart.update();
+        } else {
+          weeklyTrendChart = new Chart(trendCtx, {
+            type: 'line',
+            data: {
+              labels: weeklyData.labels,
+              datasets: [{
+                label: 'Cumulative Attendance %',
+                data: weeklyData.values,
+                borderColor: '#10b981',
+                backgroundColor: 'rgba(16, 185, 129, 0.12)',
+                borderWidth: 2.5,
+                fill: true,
+                tension: 0.25,
+                pointBackgroundColor: '#10b981',
+                pointBorderColor: '#050505',
+                pointBorderWidth: 2,
+                pointRadius: 4,
+                pointHoverRadius: 6
+              }]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              animation: { duration: 300 },
+              scales: {
+                y: {
+                  min: 0,
+                  max: 100,
+                  grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                  ticks: { color: '#a1a1aa', font: { family: 'monospace' } }
+                },
+                x: {
+                  grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                  ticks: { color: '#a1a1aa', font: { family: 'monospace' } }
+                }
+              },
+              plugins: {
+                legend: { display: false },
+                tooltip: {
+                  backgroundColor: 'rgba(18, 18, 22, 0.9)',
+                  borderColor: 'rgba(255, 255, 255, 0.1)',
+                  borderWidth: 1,
+                  callbacks: {
+                    label: function (ctx) {
+                      if (ctx.raw === null) return ' No sessions held';
+                      return ` Cumulative: ${ctx.raw.toFixed(1)}%`;
+                    }
+                  }
+                }
+              }
+            },
+            plugins: [target75LinePlugin]
+          });
+        }
+      }
+
+      // Computes cumulative attendance progression week-by-week
+      function computeWeeklyProgression() {
+        const semesterStart = parseDateISO(SEMESTER_START_DATE);
+        const today = getTodayDate();
+        const maxWeeks = Math.max(1, Math.ceil((today.getTime() - semesterStart.getTime()) / (7 * 24 * 60 * 60 * 1000)) + 1);
+
+        const labels = [];
+        const values = [];
+
+        let runningAttended = 0;
+        let runningHeld = 0;
+
+        for (let w = 0; w < maxWeeks; w++) {
+          const weekStartDate = new Date(semesterStart);
+          weekStartDate.setDate(semesterStart.getDate() + w * 7);
+
+          // Iterate through the 7 days of this week
+          for (let d = 0; d < 7; d++) {
+            const currentD = new Date(weekStartDate);
+            currentD.setDate(weekStartDate.getDate() + d);
+            const iso = formatDateISO(currentD);
+            const dayData = appState.days[iso];
+
+            if (dayData && !dayData.isHoliday) {
+              const standardSlots = getSlotsForDate(iso);
+              standardSlots.forEach(slot => {
+                const status = dayData.slots ? dayData.slots[slot.id] : null;
+                if (status === 'present') {
+                  runningAttended++;
+                  runningHeld++;
+                } else if (status === 'absent') {
+                  runningHeld++;
+                }
+              });
+
+              if (Array.isArray(dayData.extraClasses)) {
+                dayData.extraClasses.forEach(extra => {
+                  if (extra.status === 'present') {
+                    runningAttended++;
+                    runningHeld++;
+                  } else if (extra.status === 'absent') {
+                    runningHeld++;
+                  }
+                });
+              }
+            }
+          }
+
+          labels.push(`W${w + 1}`);
+          const pct = runningHeld > 0 ? (runningAttended / runningHeld) * 100 : null;
+          values.push(pct);
+        }
+
+        return { labels, values };
+      }
+
+      /* --------------------------------------------------------------------------
+         7. STORAGE BACKUP, RESTORE & EXPORT (Agent 6)
+         -------------------------------------------------------------------------- */
+      function setupStorageControls() {
+        // Export Data button
+        document.getElementById('btnExportData').addEventListener('click', () => {
+          const dataStr = JSON.stringify(appState, null, 2);
+          const blob = new Blob([dataStr], { type: 'application/json' });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          const dateStr = formatDateISO(getTodayDate());
+          a.href = url;
+          a.download = `attendance_backup_${dateStr}.json`;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+          showToast('Backup JSON exported successfully', 'success');
+        });
+
+        // Import Data button
+        const fileInput = document.getElementById('fileInput');
+        document.getElementById('btnImportData').addEventListener('click', () => {
+          fileInput.click();
+        });
+
+        fileInput.addEventListener('change', (e) => {
+          const file = e.target.files[0];
+          if (!file) return;
+
+          const reader = new FileReader();
+          reader.onload = function (event) {
+            try {
+              const imported = JSON.parse(event.target.result);
+              if (imported && typeof imported === 'object' && imported.days) {
+                appState = imported;
+                saveStateToStorage();
+                renderApp();
+                showToast('Attendance data restored successfully', 'success');
+              } else {
+                showToast('Invalid backup file format', 'error');
+              }
+            } catch (err) {
+              console.error('Import parse error:', err);
+              showToast('Error parsing JSON backup file', 'error');
+            }
+          };
+          reader.readAsText(file);
+          fileInput.value = ''; // Reset input
+        });
+
+        // Reset All Data button
+        document.getElementById('btnResetData').addEventListener('click', () => {
+          const confirmed = window.confirm(
+            'RESET ALL ATTENDANCE DATA?\n\nThis will permanently delete all recorded slots, holidays, and extra classes from your browser. Are you sure?'
+          );
+          if (confirmed) {
+            initDefaultState();
+            renderApp();
+            showToast('All attendance data reset to default', 'warn');
+          }
+        });
+
+        // Sync Local Disk button (File System Access API)
+        const btnDiskSync = document.getElementById('btnDiskSync');
+        if (btnDiskSync) {
+          btnDiskSync.addEventListener('click', handleDiskSyncButtonClick);
+        }
+      }
+
+      /* --------------------------------------------------------------------------
+         8. NAVIGATION & DATE EVENT HANDLERS
+         -------------------------------------------------------------------------- */
+      function setupNavigationControls() {
+        document.getElementById('btnPrevDay').addEventListener('click', () => {
+          const prev = new Date(selectedDate);
+          prev.setDate(prev.getDate() - 1);
+          if (formatDateISO(prev) >= SEMESTER_START_DATE) {
+            selectedDate = prev;
+            renderApp();
+          } else {
+            showToast('Semester begins on Sep 21, 2026', 'warn');
+          }
+        });
+
+        document.getElementById('btnNextDay').addEventListener('click', () => {
+          selectedDate.setDate(selectedDate.getDate() + 1);
+          renderApp();
+        });
+
+        document.getElementById('btnPrevWeek').addEventListener('click', () => {
+          const prev = new Date(selectedDate);
+          prev.setDate(prev.getDate() - 7);
+          if (formatDateISO(prev) >= SEMESTER_START_DATE) {
+            selectedDate = prev;
+          } else {
+            selectedDate = parseDateISO(SEMESTER_START_DATE);
+            showToast('Reached start of semester (Sep 21, 2026)', 'warn');
+          }
+          renderApp();
+        });
+
+        document.getElementById('btnNextWeek').addEventListener('click', () => {
+          selectedDate.setDate(selectedDate.getDate() + 7);
+          renderApp();
+        });
+
+        document.getElementById('btnToday').addEventListener('click', () => {
+          selectedDate = getTodayDate();
+          renderApp();
+        });
+
+        document.getElementById('datePickerInput').addEventListener('change', (e) => {
+          if (e.target.value) {
+            if (e.target.value < SEMESTER_START_DATE) {
+              selectedDate = parseDateISO(SEMESTER_START_DATE);
+              showToast('Semester begins on Sep 21, 2026', 'warn');
+            } else {
+              selectedDate = parseDateISO(e.target.value);
+            }
+            renderApp();
+          }
+        });
+
+        // Toggle Holiday or OFF checkbox
+        document.getElementById('holidayCheckbox').addEventListener('change', (e) => {
+          const iso = formatDateISO(selectedDate);
+          if (!appState.days[iso]) {
+            appState.days[iso] = { isHoliday: false, slots: {}, extraClasses: [] };
+          }
+          appState.days[iso].isHoliday = e.target.checked;
+          saveStateToStorage();
+          renderApp();
+          showToast(e.target.checked ? 'Marked day as Holiday / OFF' : 'Holiday removed', 'warn');
+        });
+      }
+
+      /* --------------------------------------------------------------------------
+         9. UNMARKED DAYS & PENDING AUDIT ENGINE
+         -------------------------------------------------------------------------- */
+      function getUnmarkedDaysList() {
+        const semesterStart = parseDateISO(SEMESTER_START_DATE);
+        const today = getTodayDate();
+        const list = [];
+
+        // Traverse all calendar weekdays from semester start up to today
+        const cur = new Date(semesterStart);
+        while (cur <= today) {
+          const iso = formatDateISO(cur);
+          const dayOfWeek = cur.getDay();
+
+          // Skip weekends (Sunday 0, Saturday 6)
+          if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+            const dayData = appState.days[iso] || { isHoliday: false, slots: {}, extraClasses: [] };
+
+            if (!dayData.isHoliday) {
+              const standardSlots = getSlotsForDate(iso);
+              const extraClasses = Array.isArray(dayData.extraClasses) ? dayData.extraClasses : [];
+              let requiredCount = 0;
+              let recordedCount = 0;
+
+              standardSlots.forEach(s => {
+                const status = dayData.slots ? dayData.slots[s.id] : null;
+                const isRecorded = (status === 'present' || status === 'absent' || status === 'cancelled');
+                if (s.isDynamicExtra) {
+                  if (isRecorded) {
+                    requiredCount++;
+                    recordedCount++;
+                  }
+                } else {
+                  requiredCount++;
+                  if (isRecorded) recordedCount++;
+                }
+              });
+
+              extraClasses.forEach(e => {
+                requiredCount++;
+                if (e.status === 'present' || e.status === 'absent' || e.status === 'cancelled') {
+                  recordedCount++;
+                }
+              });
+
+              const unrecordedCount = requiredCount - recordedCount;
+              if (unrecordedCount > 0) {
+                list.push({
+                  isoDate: iso,
+                  dateObj: new Date(cur),
+                  formattedTitle: cur.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' }),
+                  isToday: (iso === formatDateISO(today)),
+                  unrecordedCount,
+                  totalSlotsCount: requiredCount
+                });
+              }
+            }
+          }
+
+          cur.setDate(cur.getDate() + 1);
+        }
+
+        // Return reverse-chronological (most recent pending days first)
+        return list.reverse();
+      }
+
+      function updateUnmarkedStatus() {
+        const badge = document.getElementById('btnUnmarkedBadge');
+        const container = document.getElementById('unmarkedDaysListContainer');
+        const summary = document.getElementById('unmarkedSummaryCount');
+        if (!badge || !container) return;
+
+        const unmarkedList = getUnmarkedDaysList();
+
+        if (unmarkedList.length > 0) {
+          badge.className = 'badge badge-purple mono';
+          badge.innerHTML = `<span style="display:inline-block; width:7px; height:7px; border-radius:50%; background:#a855f7; box-shadow:0 0 8px #a855f7; margin-right:6px; animation:pulseDotPurple 1.8s infinite;"></span>⚠️ ${unmarkedList.length} ${unmarkedList.length === 1 ? 'Day Unmarked' : 'Days Unmarked'}`;
+          badge.title = 'Click to review past days with unrecorded attendance';
+
+          container.innerHTML = '';
+          unmarkedList.forEach(item => {
+            const row = document.createElement('div');
+            row.className = 'unmarked-card';
+            row.innerHTML = `
+              <div style="display:flex; flex-direction:column; gap:2px;">
+                <div style="display:flex; align-items:center; gap:8px;">
+                  <span style="font-weight:700; color:#ffffff; font-size:0.9rem;">${item.formattedTitle}</span>
+                  ${item.isToday ? '<span class="badge badge-sky" style="font-size:0.65rem; padding:2px 6px;">Today</span>' : ''}
+                </div>
+                <div style="font-size:0.75rem; color:#c084fc; font-family:var(--font-mono);">
+                  ${item.unrecordedCount} of ${item.totalSlotsCount} ${item.totalSlotsCount === 1 ? 'class' : 'classes'} unrecorded
+                </div>
+              </div>
+              <div style="display:flex; align-items:center; gap:8px;">
+                <button class="btn btn-primary btn-jump" style="padding:6px 12px; font-size:0.74rem;">
+                  Review ›
+                </button>
+                <button class="btn btn-holiday-quick" style="padding:6px 10px; font-size:0.74rem;" title="Mark this day as Holiday / Off">
+                  Mark Off
+                </button>
+              </div>
+            `;
+
+            row.querySelector('.btn-jump').addEventListener('click', () => {
+              selectedDate = parseDateISO(item.isoDate);
+              const modal = document.getElementById('unmarkedDaysModal');
+              if (modal) modal.classList.remove('open');
+              renderApp();
+              showToast(`Navigated to ${item.formattedTitle}`, 'info');
+              const targetSlotSection = document.getElementById('slotsListContainer');
+              if (targetSlotSection) {
+                targetSlotSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+              }
+            });
+
+            row.querySelector('.btn-holiday-quick').addEventListener('click', () => {
+              if (!appState.days[item.isoDate]) {
+                appState.days[item.isoDate] = { isHoliday: false, slots: {}, extraClasses: [] };
+              }
+              appState.days[item.isoDate].isHoliday = true;
+              saveStateToStorage();
+              renderApp();
+              showToast(`Marked ${item.formattedTitle} as Holiday / OFF`, 'warn');
+            });
+
+            container.appendChild(row);
+          });
+
+          if (summary) {
+            summary.textContent = `${unmarkedList.length} ${unmarkedList.length === 1 ? 'date needs' : 'dates need'} attendance marks`;
+          }
+        } else {
+          badge.className = 'badge badge-emerald mono';
+          badge.innerHTML = `<span style="display:inline-block; width:7px; height:7px; border-radius:50%; background:#10b981; box-shadow:0 0 8px #10b981; margin-right:6px;"></span>✅ All Days Marked`;
+          badge.title = 'All past weekdays have attendance recorded!';
+
+          container.innerHTML = `
+            <div style="padding:32px 16px; text-align:center; color:var(--text-gray-400); font-family:var(--font-mono); font-size:0.86rem; border:1px dashed rgba(255,255,255,0.1); border-radius:12px; background:rgba(255,255,255,0.02);">
+              🎉 <strong>All caught up!</strong><br>
+              Every weekday from the start of the semester up to today is fully recorded.
+            </div>
+          `;
+
+          if (summary) {
+            summary.textContent = '0 dates pending';
+          }
+        }
+      }
+
+      function setupUnmarkedDaysModal() {
+        const modal = document.getElementById('unmarkedDaysModal');
+        const btnOpen = document.getElementById('btnUnmarkedBadge');
+        const btnClose = document.getElementById('btnCloseUnmarkedModal');
+        const btnCloseBottom = document.getElementById('btnCloseUnmarkedModalBottom');
+
+        function openModal() {
+          if (modal) modal.classList.add('open');
+        }
+
+        function closeModal() {
+          if (modal) modal.classList.remove('open');
+        }
+
+        if (btnOpen) btnOpen.addEventListener('click', openModal);
+        if (btnClose) btnClose.addEventListener('click', closeModal);
+        if (btnCloseBottom) btnCloseBottom.addEventListener('click', closeModal);
+
+        if (modal) {
+          modal.addEventListener('click', (e) => {
+            if (e.target === modal) closeModal();
+          });
+        }
+
+        window.addEventListener('keydown', (e) => {
+          if (e.key === 'Escape' && modal && modal.classList.contains('open')) {
+            closeModal();
+          }
+        });
+      }
+
+      /* --------------------------------------------------------------------------
+         10. EXTRA CLASS MODAL CONTROLS
+         -------------------------------------------------------------------------- */
+      function setupExtraClassModal() {
+        const modal = document.getElementById('extraClassModal');
+        const btnOpen = document.getElementById('btnAddExtraClass');
+        const btnClose = document.getElementById('btnCloseModal');
+        const btnCancel = document.getElementById('btnCancelModal');
+        const form = document.getElementById('extraClassForm');
+        const subjectInput = document.getElementById('extraSubjectInput');
+        const timeInput = document.getElementById('extraTimeInput');
+        const statusSelect = document.getElementById('extraInitialStatus');
+
+        function openModal() {
+          modal.classList.add('open');
+          subjectInput.value = '';
+          timeInput.value = '14:30 - 15:30';
+          statusSelect.value = 'unrecorded';
+          subjectInput.focus();
+        }
+
+        function closeModal() {
+          modal.classList.remove('open');
+        }
+
+        btnOpen.addEventListener('click', openModal);
+        btnClose.addEventListener('click', closeModal);
+        btnCancel.addEventListener('click', closeModal);
+
+        modal.addEventListener('click', (e) => {
+          if (e.target === modal) closeModal();
+        });
+
+        window.addEventListener('keydown', (e) => {
+          if (e.key === 'Escape' && modal.classList.contains('open')) {
+            closeModal();
+          }
+        });
+
+        form.addEventListener('submit', (e) => {
+          e.preventDefault();
+          const sub = subjectInput.value.trim();
+          const slotTime = timeInput.value.trim();
+          const initialStatus = statusSelect.value;
+
+          if (!sub || !slotTime) return;
+
+          const iso = formatDateISO(selectedDate);
+          if (!appState.days[iso]) {
+            appState.days[iso] = { isHoliday: false, slots: {}, extraClasses: [] };
+          }
+          if (!Array.isArray(appState.days[iso].extraClasses)) {
+            appState.days[iso].extraClasses = [];
+          }
+
+          const newExtra = {
+            id: 'extra_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
+            subject: sub,
+            time: slotTime
+          };
+
+          if (initialStatus !== 'unrecorded') {
+            newExtra.status = initialStatus;
+          }
+
+          appState.days[iso].extraClasses.push(newExtra);
+          saveStateToStorage();
+          closeModal();
+          renderApp();
+          showToast(`Added extra class: ${sub}`, 'success');
+        });
+      }
+
+      /* --------------------------------------------------------------------------
+         10. TOAST NOTIFICATIONS & HELPERS
+         -------------------------------------------------------------------------- */
+      function showToast(message, type = 'info') {
+        const container = document.getElementById('toastContainer');
+        const toast = document.createElement('div');
+        toast.className = `toast ${type}`;
+        toast.textContent = message;
+        container.appendChild(toast);
+
+        setTimeout(() => {
+          toast.style.opacity = '0';
+          toast.style.transform = 'translateY(8px)';
+          toast.style.transition = 'all 0.25s var(--ease-glass)';
+          setTimeout(() => {
+            if (toast.parentNode) container.removeChild(toast);
+          }, 250);
+        }, 2600);
+      }
+
+      function escapeHtml(str) {
+        if (!str) return '';
+        return String(str)
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;')
+          .replace(/'/g, '&#039;');
+      }
+
+      /* --------------------------------------------------------------------------
+         11. APPLICATION INITIALIZATION
+         -------------------------------------------------------------------------- */
+      function init() {
+        loadStateFromStorage();
+        setupNavigationControls();
+        setupStorageControls();
+        setupExtraClassModal();
+        setupUnmarkedDaysModal();
+        renderApp();
+        restoreDiskLinkOnStartup();
+      }
+
+      // Bootstrap app on DOM ready
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+      } else {
+        init();
+      }
+    })();
+  </script>
+</body>
+</html>
