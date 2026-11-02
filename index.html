@@ -1421,6 +1421,8 @@
       }
     }
   </style>
+  <!-- GOOGLE IDENTITY SERVICES (GIS) FOR GOOGLE DRIVE SYNC -->
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 <body>
 
@@ -1447,6 +1449,10 @@
         </button>
       </div>
       <div class="header-actions">
+        <button class="btn btn-emerald" id="btnGoogleDrive" title="Sync with Google Drive">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 19.5h20L12 2z"/><line x1="2" y1="19.5" x2="22" y2="19.5"/><line x1="12" y1="2" x2="17" y2="11"/><line x1="7" y1="11" x2="17" y2="11"/></svg>
+          <span id="gdriveBtnText">Google Drive</span>
+        </button>
         <button class="btn btn-primary" id="btnDiskSync" title="Sync directly to physical attendance_data.json on disk">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
           <span id="diskSyncBtnText">Sync Local Disk</span>
@@ -1651,6 +1657,67 @@
         <span id="unmarkedSummaryCount" style="font-size:0.75rem; font-family:var(--font-mono); color:var(--text-gray-400);"></span>
         <button type="button" class="btn" id="btnCloseUnmarkedModalBottom">Close</button>
       </div>
+    </div>
+  </div>
+
+  <!-- MODAL: GOOGLE DRIVE CLOUD SYNC -->
+  <div class="modal-backdrop" id="gdriveModal">
+    <div class="modal-content" style="max-width: 520px;">
+      <div class="modal-header">
+        <div style="display:flex; align-items:center; gap:10px;">
+          <div style="width:36px; height:36px; border-radius:10px; background:rgba(16,185,129,0.15); display:flex; align-items:center; justify-content:center; border:1px solid rgba(16,185,129,0.3);">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2"><path d="M12 2L2 19.5h20L12 2z"/></svg>
+          </div>
+          <div>
+            <h3 class="modal-title">Google Drive Auto-Sync</h3>
+            <p style="font-size:0.75rem; color:var(--text-gray-400); font-family:var(--font-mono);">
+              Two-way sync across phone, laptop & any browser
+            </p>
+          </div>
+        </div>
+        <button class="btn-close" id="btnCloseGdriveModal">&times;</button>
+      </div>
+
+      <div style="font-size:0.82rem; color:var(--text-gray-300); line-height:1.5; margin-bottom:14px;">
+        Connect your Google Drive to sync your attendance across all your devices. Attendance is saved in a private file (<code style="color:#38bdf8;">attendance_data.json</code>) in your personal Google Drive account.
+      </div>
+
+      <div id="gdriveStatusBox" style="padding:12px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:10px; margin-bottom:14px;">
+        <div style="display:flex; align-items:center; justify-content:space-between;">
+          <span id="gdriveStatusLabel" style="font-weight:700; color:var(--text-gray-300); font-size:0.85rem;">Status: Not Connected</span>
+          <button type="button" class="btn btn-danger" id="btnGdriveDisconnect" style="display:none; padding:4px 10px; font-size:0.75rem;">Disconnect</button>
+        </div>
+        <div id="gdriveSyncTimestamp" style="font-size:0.75rem; color:var(--text-gray-400); font-family:var(--font-mono); margin-top:4px;">
+          Drive file: None
+        </div>
+      </div>
+
+      <form id="gdriveConfigForm">
+        <div class="form-group">
+          <label class="form-label" for="gdriveClientIdInput">Google Cloud OAuth Client ID</label>
+          <input type="text" id="gdriveClientIdInput" class="form-input" placeholder="e.g. 123456789-abc.apps.googleusercontent.com" autocomplete="off" required>
+          <p style="font-size:0.72rem; color:var(--text-gray-400); margin-top:4px; line-height:1.4;">
+            Paste your Google OAuth Client ID here. You only need to do this once.
+          </p>
+        </div>
+
+        <div style="padding:12px; background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.08); border-radius:10px; margin:12px 0; font-size:0.76rem; color:var(--text-gray-300);">
+          <strong style="color:#ffffff;">Quick 2-Minute Google Cloud Setup:</strong>
+          <ol style="margin:6px 0 0 16px; padding:0; display:flex; flex-direction:column; gap:4px;">
+            <li>Go to <a href="https://console.cloud.google.com/apis/credentials" target="_blank" style="color:#38bdf8; text-decoration:underline;">Google Cloud Console</a> & create a free project.</li>
+            <li>Enable the <strong>Google Drive API</strong> in Library.</li>
+            <li>Under <strong>Credentials</strong>, click <strong>Create Credentials → OAuth client ID</strong>.</li>
+            <li>Choose <strong>Web application</strong> and add to <em>Authorized JavaScript origins</em>:<br><code style="background:rgba(255,255,255,0.1); padding:1px 4px; border-radius:4px; user-select:all;">https://integrallbenzene.github.io</code></li>
+            <li>Copy your Client ID and paste it above!</li>
+          </ol>
+        </div>
+
+        <div class="modal-actions" style="margin-top:14px;">
+          <button type="button" class="btn" id="btnCancelGdriveModal">Close</button>
+          <button type="button" class="btn btn-emerald" id="btnGdriveManualSync" style="display:none;">Sync to Drive Now</button>
+          <button type="submit" class="btn btn-sky" id="btnConnectGdriveSubmit">Save & Connect</button>
+        </div>
+      </form>
     </div>
   </div>
 
@@ -2056,6 +2123,10 @@
 
         if (linkedFileHandle) {
           writeStateToDisk();
+        }
+
+        if (gdriveAccessToken) {
+          queueGdriveUpload();
         }
       }
 
@@ -3434,6 +3505,313 @@
           .replace(/'/g, '&#039;');
       }
 
+
+      /* --------------------------------------------------------------------------
+         2.2. GOOGLE DRIVE REAL-TIME CLOUD SYNC ENGINE
+         -------------------------------------------------------------------------- */
+      const GDRIVE_CLIENT_ID_KEY = 'ATTENDANCE_GDRIVE_CLIENT_ID';
+      let gdriveAccessToken = null;
+      let gdriveFileId = null;
+      let gdriveTokenClient = null;
+      let gdriveUploadTimer = null;
+      let isGdriveSyncing = false;
+
+      function getStoredGdriveClientId() {
+        return localStorage.getItem(GDRIVE_CLIENT_ID_KEY) || '';
+      }
+
+      function initGdriveTokenClient(clientId, onTokenCallback) {
+        if (!window.google || !window.google.accounts || !window.google.accounts.oauth2) {
+          return false;
+        }
+        try {
+          gdriveTokenClient = google.accounts.oauth2.initTokenClient({
+            client_id: clientId,
+            scope: 'https://www.googleapis.com/auth/drive.file',
+            callback: async (resp) => {
+              if (resp.error) {
+                console.error('Google auth error:', resp);
+                showToast('Google sign-in error: ' + (resp.error_description || resp.error), 'error');
+                updateGdriveUI(false);
+                return;
+              }
+              gdriveAccessToken = resp.access_token;
+              sessionStorage.setItem('gdrive_token', gdriveAccessToken);
+              updateGdriveUI(true);
+              showToast('Connected to Google Drive!', 'success');
+              if (onTokenCallback) onTokenCallback();
+              await syncWithGoogleDrive();
+            }
+          });
+          return true;
+        } catch (err) {
+          console.error('Failed to init Google token client:', err);
+          return false;
+        }
+      }
+
+      function updateGdriveUI(isConnected, syncStatus = '') {
+        const btnText = document.getElementById('gdriveBtnText');
+        const btn = document.getElementById('btnGoogleDrive');
+        const statusBox = document.getElementById('gdriveStatusBox');
+        const statusLabel = document.getElementById('gdriveStatusLabel');
+        const btnDisconnect = document.getElementById('btnGdriveDisconnect');
+        const btnManualSync = document.getElementById('btnGdriveManualSync');
+        const syncTimestamp = document.getElementById('gdriveSyncTimestamp');
+
+        if (isConnected) {
+          if (btn) {
+            btn.className = 'btn btn-emerald';
+            btn.title = 'Google Drive Synced (Click to manage)';
+          }
+          if (btnText) {
+            btnText.innerHTML = syncStatus ? `Drive: ${syncStatus}` : 'Drive: Synced';
+          }
+          if (statusLabel) {
+            statusLabel.style.color = '#10b981';
+            statusLabel.textContent = '✓ Connected to Google Drive';
+          }
+          if (btnDisconnect) btnDisconnect.style.display = 'inline-block';
+          if (btnManualSync) btnManualSync.style.display = 'inline-block';
+        } else {
+          if (btn) {
+            btn.className = 'btn';
+            btn.title = 'Connect Google Drive for cross-device sync';
+          }
+          if (btnText) btnText.textContent = 'Google Drive';
+          if (statusLabel) {
+            statusLabel.style.color = 'var(--text-gray-300)';
+            statusLabel.textContent = 'Status: Not Connected';
+          }
+          if (btnDisconnect) btnDisconnect.style.display = 'none';
+          if (btnManualSync) btnManualSync.style.display = 'none';
+        }
+      }
+
+      // Search Google Drive for attendance_data.json
+      async function findGdriveFileId() {
+        if (!gdriveAccessToken) return null;
+        try {
+          const q = encodeURIComponent("name = 'attendance_data.json' and trashed = false");
+          const url = `https://www.googleapis.com/drive/v3/files?q=${q}&fields=files(id,name,modifiedTime)`;
+          const resp = await fetch(url, {
+            headers: { Authorization: `Bearer ${gdriveAccessToken}` }
+          });
+          if (!resp.ok) {
+            if (resp.status === 401) {
+              gdriveAccessToken = null;
+              sessionStorage.removeItem('gdrive_token');
+              updateGdriveUI(false);
+            }
+            return null;
+          }
+          const data = await resp.json();
+          if (data.files && data.files.length > 0) {
+            gdriveFileId = data.files[0].id;
+            return gdriveFileId;
+          }
+          return null;
+        } catch (e) {
+          console.error('Find file in Drive error:', e);
+          return null;
+        }
+      }
+
+      // Two-way sync with Google Drive
+      async function syncWithGoogleDrive() {
+        if (!gdriveAccessToken || isGdriveSyncing) return;
+        isGdriveSyncing = true;
+        updateGdriveUI(true, 'Syncing...');
+
+        try {
+          const fileId = await findGdriveFileId();
+          if (fileId) {
+            // File exists on Drive: download and merge
+            const downloadUrl = `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`;
+            const resp = await fetch(downloadUrl, {
+              headers: { Authorization: `Bearer ${gdriveAccessToken}` }
+            });
+
+            if (resp.ok) {
+              const driveData = await resp.json();
+              if (driveData && driveData.days) {
+                // Merge days intelligently: union of all days
+                appState.days = Object.assign({}, driveData.days, appState.days);
+                saveStateToStorage();
+                renderApp();
+              }
+            }
+            // Upload unified latest state back to Drive
+            await uploadStateToGdrive(fileId);
+          } else {
+            // First time: create attendance_data.json on Drive
+            await createGdriveFile();
+          }
+
+          const nowStr = new Date().toLocaleTimeString();
+          updateGdriveUI(true, 'Synced');
+          const syncTimestamp = document.getElementById('gdriveSyncTimestamp');
+          if (syncTimestamp) {
+            syncTimestamp.textContent = `Last synced: ${nowStr} (File: attendance_data.json)`;
+          }
+          showToast('Google Drive synced successfully!', 'success');
+        } catch (err) {
+          console.error('Sync with Drive error:', err);
+          updateGdriveUI(true, 'Error');
+          showToast('Could not sync with Google Drive', 'error');
+        } finally {
+          isGdriveSyncing = false;
+        }
+      }
+
+      // Create new file on Google Drive
+      async function createGdriveFile() {
+        if (!gdriveAccessToken) return;
+        const metadata = {
+          name: 'attendance_data.json',
+          mimeType: 'application/json'
+        };
+
+        const form = new FormData();
+        form.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
+        form.append('file', new Blob([JSON.stringify(appState, null, 2)], { type: 'application/json' }));
+
+        const resp = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id', {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${gdriveAccessToken}` },
+          body: form
+        });
+
+        if (resp.ok) {
+          const res = await resp.json();
+          gdriveFileId = res.id;
+        }
+      }
+
+      // Upload state to existing file on Drive
+      async function uploadStateToGdrive(fileId) {
+        if (!gdriveAccessToken || !fileId) return;
+        const uploadUrl = `https://www.googleapis.com/upload/drive/v3/files/${fileId}?uploadType=media`;
+        await fetch(uploadUrl, {
+          method: 'PATCH',
+          headers: {
+            Authorization: `Bearer ${gdriveAccessToken}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(appState, null, 2)
+        });
+      }
+
+      // Debounced background upload to Drive
+      function queueGdriveUpload() {
+        if (gdriveUploadTimer) clearTimeout(gdriveUploadTimer);
+        gdriveUploadTimer = setTimeout(async () => {
+          if (!gdriveAccessToken) return;
+          try {
+            updateGdriveUI(true, 'Saving...');
+            let fileId = gdriveFileId || await findGdriveFileId();
+            if (fileId) {
+              await uploadStateToGdrive(fileId);
+            } else {
+              await createGdriveFile();
+            }
+            updateGdriveUI(true, 'Synced');
+            const syncTimestamp = document.getElementById('gdriveSyncTimestamp');
+            if (syncTimestamp) {
+              syncTimestamp.textContent = `Last synced: ${new Date().toLocaleTimeString()}`;
+            }
+          } catch (e) {
+            console.warn('Background Drive upload error:', e);
+            updateGdriveUI(true, 'Offline');
+          }
+        }, 1500);
+      }
+
+      function setupGdriveModalControls() {
+        const modal = document.getElementById('gdriveModal');
+        const btnOpen = document.getElementById('btnGoogleDrive');
+        const btnClose = document.getElementById('btnCloseGdriveModal');
+        const btnCancel = document.getElementById('btnCancelGdriveModal');
+        const form = document.getElementById('gdriveConfigForm');
+        const clientIdInput = document.getElementById('gdriveClientIdInput');
+        const btnDisconnect = document.getElementById('btnGdriveDisconnect');
+        const btnManualSync = document.getElementById('btnGdriveManualSync');
+
+        function openModal() {
+          const storedId = getStoredGdriveClientId();
+          clientIdInput.value = storedId;
+          updateGdriveUI(!!gdriveAccessToken);
+          modal.classList.add('open');
+        }
+
+        function closeModal() {
+          modal.classList.remove('open');
+        }
+
+        if (btnOpen) btnOpen.addEventListener('click', openModal);
+        if (btnClose) btnClose.addEventListener('click', closeModal);
+        if (btnCancel) btnCancel.addEventListener('click', closeModal);
+
+        modal.addEventListener('click', (e) => {
+          if (e.target === modal) closeModal();
+        });
+
+        form.addEventListener('submit', (e) => {
+          e.preventDefault();
+          const clientId = clientIdInput.value.trim();
+          if (!clientId) {
+            showToast('Please enter your Google OAuth Client ID', 'warn');
+            return;
+          }
+
+          localStorage.setItem(GDRIVE_CLIENT_ID_KEY, clientId);
+          closeModal();
+
+          const ok = initGdriveTokenClient(clientId);
+          if (ok && gdriveTokenClient) {
+            gdriveTokenClient.requestAccessToken({ prompt: 'consent' });
+          } else {
+            showToast('Google Identity library loading... Try again in a few seconds', 'info');
+          }
+        });
+
+        if (btnDisconnect) {
+          btnDisconnect.addEventListener('click', () => {
+            if (confirm('Disconnect from Google Drive? Your local attendance data will remain intact.')) {
+              if (gdriveAccessToken && window.google && google.accounts && google.accounts.oauth2) {
+                try { google.accounts.oauth2.revoke(gdriveAccessToken, () => {}); } catch (e) {}
+              }
+              gdriveAccessToken = null;
+              gdriveFileId = null;
+              sessionStorage.removeItem('gdrive_token');
+              updateGdriveUI(false);
+              closeModal();
+              showToast('Google Drive disconnected', 'info');
+            }
+          });
+        }
+
+        if (btnManualSync) {
+          btnManualSync.addEventListener('click', async () => {
+            await syncWithGoogleDrive();
+          });
+        }
+      }
+
+      function restoreGdriveSessionOnStartup() {
+        const storedId = getStoredGdriveClientId();
+        const storedToken = sessionStorage.getItem('gdrive_token');
+        if (storedToken) {
+          gdriveAccessToken = storedToken;
+          updateGdriveUI(true, 'Restored');
+          setTimeout(() => syncWithGoogleDrive(), 1000);
+        } else if (storedId) {
+          setTimeout(() => {
+            initGdriveTokenClient(storedId);
+          }, 1500);
+        }
+      }
+
       /* --------------------------------------------------------------------------
          11. APPLICATION INITIALIZATION
          -------------------------------------------------------------------------- */
@@ -3443,8 +3821,10 @@
         setupStorageControls();
         setupExtraClassModal();
         setupUnmarkedDaysModal();
+        setupGdriveModalControls();
         renderApp();
         restoreDiskLinkOnStartup();
+        restoreGdriveSessionOnStartup();
       }
 
       // Bootstrap app on DOM ready
