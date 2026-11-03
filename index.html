@@ -1709,9 +1709,19 @@
           </ol>
         </div>
 
-        <div class="modal-actions" style="margin-top:14px;">
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px; margin: 12px 0 6px 0;" id="gistActionButtonsRow">
+          <button type="button" class="btn btn-emerald" id="btnGistForcePush" style="display:none; justify-content:center; gap:6px;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            Push to Cloud
+          </button>
+          <button type="button" class="btn btn-sky" id="btnGistForcePull" style="display:none; justify-content:center; gap:6px;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Pull from Cloud
+          </button>
+        </div>
+        <div class="modal-actions" style="margin-top:10px;">
           <button type="button" class="btn" id="btnCancelGithubSyncModal">Close</button>
-          <button type="button" class="btn btn-emerald" id="btnGithubManualSync" style="display:none;">Sync Now</button>
+          <button type="button" class="btn" id="btnGithubManualSync" style="display:none;">Smart Sync</button>
           <button type="submit" class="btn btn-sky" id="btnConnectGithubSubmit">Connect & Sync</button>
         </div>
       </form>
@@ -2110,7 +2120,7 @@
         }
       }
 
-      function saveStateToStorage() {
+      function saveStateToStorage(skipCloudSync = false) {
         try {
           localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
         } catch (err) {
@@ -2122,7 +2132,8 @@
           writeStateToDisk();
         }
 
-        if (githubToken) {
+        // Auto-upload to Cloud on every edit
+        if (githubToken && !skipCloudSync) {
           queueGistUpload();
         }
       }
@@ -3546,6 +3557,10 @@
           }
           if (btnDisconnect) btnDisconnect.style.display = 'inline-block';
           if (btnManualSync) btnManualSync.style.display = 'inline-block';
+          const btnPush = document.getElementById('btnGistForcePush');
+          const btnPull = document.getElementById('btnGistForcePull');
+          if (btnPush) btnPush.style.display = 'inline-flex';
+          if (btnPull) btnPull.style.display = 'inline-flex';
         } else {
           if (btn) {
             btn.className = 'btn';
@@ -3559,6 +3574,10 @@
           if (detailsLabel) detailsLabel.textContent = 'Gist: None';
           if (btnDisconnect) btnDisconnect.style.display = 'none';
           if (btnManualSync) btnManualSync.style.display = 'none';
+          const btnPush = document.getElementById('btnGistForcePush');
+          const btnPull = document.getElementById('btnGistForcePull');
+          if (btnPush) btnPush.style.display = 'none';
+          if (btnPull) btnPull.style.display = 'none';
         }
       }
 
@@ -3594,6 +3613,100 @@
         }
       }
 
+      // Slot-level smart merge function
+      function smartMergeDays(localDays, cloudDays) {
+        const merged = JSON.parse(JSON.stringify(cloudDays || {}));
+        Object.keys(localDays || {}).forEach(date => {
+          if (!merged[date]) {
+            merged[date] = localDays[date];
+          } else {
+            const loc = localDays[date];
+            if (loc.isHoliday !== undefined) merged[date].isHoliday = loc.isHoliday;
+            // Merge slots: any explicitly marked slot takes priority over unrecorded
+            if (loc.slots) {
+              if (!merged[date].slots) merged[date].slots = {};
+              Object.keys(loc.slots).forEach(slotId => {
+                const st = loc.slots[slotId];
+                if (st === 'present' || st === 'absent' || st === 'cancelled') {
+                  merged[date].slots[slotId] = st;
+                }
+              });
+            }
+            if (loc.dynamicSubjects) {
+              merged[date].dynamicSubjects = Object.assign({}, merged[date].dynamicSubjects || {}, loc.dynamicSubjects);
+            }
+            if (Array.isArray(loc.extraClasses) && loc.extraClasses.length > 0) {
+              const extraMap = new Map();
+              (merged[date].extraClasses || []).forEach(e => extraMap.set(e.id, e));
+              loc.extraClasses.forEach(e => extraMap.set(e.id, e));
+              merged[date].extraClasses = Array.from(extraMap.values());
+            }
+          }
+        });
+        return merged;
+      }
+
+      // Pull latest from Cloud Gist (Overwrites local with cloud)
+      async function pullFromGist(isSilent = false) {
+        if (!githubToken) return false;
+        let gistId = githubGistId || getStoredGistId();
+        if (!gistId) {
+          // If Gist ID not cached on this device, discover it
+          await syncWithGithubGist();
+          return true;
+        }
+
+        updateGithubSyncUI(true, 'Pulling...');
+        try {
+          const resp = await fetch(`https://api.github.com/gists/${gistId}`, {
+            headers: {
+              'Authorization': `Bearer ${githubToken}`,
+              'Accept': 'application/vnd.github+json'
+            }
+          });
+          if (resp.ok) {
+            const gist = await resp.json();
+            if (gist.files && gist.files['attendance_data.json']) {
+              const c = gist.files['attendance_data.json'].content;
+              if (c) {
+                const cloudData = JSON.parse(c);
+                if (cloudData && cloudData.days) {
+                  appState.days = cloudData.days;
+                  saveStateToStorage(true); // Save locally without re-uploading
+                  renderApp();
+                  updateGithubSyncUI(true, 'Synced');
+                  if (!isSilent) showToast('Synced latest attendance from Cloud Gist!', 'success');
+                  return true;
+                }
+              }
+            }
+          }
+        } catch (e) {
+          console.error('Pull from Gist error:', e);
+          updateGithubSyncUI(true, 'Offline');
+        }
+        return false;
+      }
+
+      // Force push local state to Cloud Gist (Overwrites cloud with local)
+      async function pushToGist() {
+        if (!githubToken) return;
+        const gistId = githubGistId || getStoredGistId();
+        if (!gistId) return;
+
+        updateGithubSyncUI(true, 'Pushing...');
+        try {
+          await uploadStateToGist(gistId);
+          updateGithubSyncUI(true, 'Synced');
+          showToast('Pushed attendance to GitHub Cloud Gist!', 'success');
+          return true;
+        } catch (e) {
+          console.error('Push to Gist error:', e);
+          showToast('Failed to push to GitHub Cloud', 'error');
+          return false;
+        }
+      }
+
       // Find existing attendance gist or create one
       async function syncWithGithubGist() {
         if (!githubToken || isGithubSyncing) return;
@@ -3620,8 +3733,8 @@
                 if (contentStr) {
                   const gistData = JSON.parse(contentStr);
                   if (gistData && gistData.days) {
-                    // Safe merge
-                    appState.days = Object.assign({}, gistData.days, appState.days);
+                    // Smart deep merge
+                    appState.days = smartMergeDays(appState.days, gistData.days);
                     saveStateToStorage();
                     renderApp();
                   }
@@ -3656,7 +3769,7 @@
                   if (c) {
                     const data = JSON.parse(c);
                     if (data && data.days) {
-                      appState.days = Object.assign({}, data.days, appState.days);
+                      appState.days = smartMergeDays(appState.days, data.days);
                       saveStateToStorage();
                       renderApp();
                     }
@@ -3727,17 +3840,19 @@
       function queueGistUpload() {
         if (!githubToken) return;
         if (githubUploadTimer) clearTimeout(githubUploadTimer);
+        // Fast auto-upload to Cloud on every edit (500ms debounce)
         githubUploadTimer = setTimeout(async () => {
-          if (!githubToken || !githubGistId) return;
+          const gistId = githubGistId || getStoredGistId();
+          if (!githubToken || !gistId) return;
           try {
             updateGithubSyncUI(true, 'Saving...');
-            await uploadStateToGist(githubGistId);
+            await uploadStateToGist(gistId);
             updateGithubSyncUI(true, 'Synced');
           } catch (e) {
             console.warn('Gist auto-save error:', e);
             updateGithubSyncUI(true, 'Offline');
           }
-        }, 1200);
+        }, 500);
       }
 
       function setupGithubSyncModalControls() {
@@ -3801,18 +3916,44 @@
             await syncWithGithubGist();
           });
         }
+
+        const btnPush = document.getElementById('btnGistForcePush');
+        if (btnPush) {
+          btnPush.addEventListener('click', async () => {
+            if (confirm('Push this device\'s exact attendance records to the cloud?')) {
+              await pushToGist();
+            }
+          });
+        }
+
+        const btnPull = document.getElementById('btnGistForcePull');
+        if (btnPull) {
+          btnPull.addEventListener('click', async () => {
+            if (confirm('Pull latest cloud attendance and replace this device\'s records?')) {
+              await pullFromGist();
+            }
+          });
+        }
       }
 
-      function restoreGithubSyncSessionOnStartup() {
+      async function restoreGithubSyncSessionOnStartup() {
         const storedToken = getStoredGithubToken();
         const storedGistId = getStoredGistId();
         if (storedToken) {
           githubToken = storedToken;
           githubGistId = storedGistId;
-          updateGithubSyncUI(true, 'Restored');
-          setTimeout(() => syncWithGithubGist(), 800);
+          updateGithubSyncUI(true, 'Fetching...');
+          // ALWAYS fetch the latest records from Cloud Gist immediately on launch!
+          await pullFromGist(true);
         }
       }
+
+      // Re-fetch automatically from Cloud when switching back to tab (e.g. mobile app switch)
+      document.addEventListener('visibilitychange', async () => {
+        if (document.visibilityState === 'visible' && githubToken) {
+          await pullFromGist(true);
+        }
+      });
 /* --------------------------------------------------------------------------
          11. APPLICATION INITIALIZATION
          -------------------------------------------------------------------------- */
